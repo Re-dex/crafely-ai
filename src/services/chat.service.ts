@@ -15,20 +15,24 @@ export class ChatService {
     });
   }
 
-  async streamChat(request: ChatCompletionRequest, res: any) {
+  async streamChat(request: any, res: any) {
     try {
       const { messages } = request;
-      const stream = await this.model.stream("Tel me about Bangladesh");
+      const stream = await this.model.stream(
+        "Tell me about Bangladesh history"
+      );
 
       // Set headers for SSE
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      // Stream each chunk to the client
       for await (const chunk of stream) {
-        res.write(chunk.content);
+        if (chunk.content) {
+          res.write(`data: ${JSON.stringify({ content: chunk.content })}\n\n`);
+        }
       }
+
       res.end();
     } catch (error) {
       console.error("Streaming error:", error);
