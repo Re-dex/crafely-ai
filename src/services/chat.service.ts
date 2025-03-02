@@ -15,7 +15,41 @@ export class ChatService {
     });
   }
 
-  async streamChat(request: ChatCompletionRequest) {
+  async streamChat(request: ChatCompletionRequest, res: any) {
+    try {
+      const { messages } = request;
+      const stream = await this.model.stream("Tel me about Bangladesh");
+
+      // Set headers for SSE
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      // Stream each chunk to the client
+      for await (const chunk of stream) {
+        const streamResponse: any = {
+          id: Date.now().toString(),
+          content: chunk.content || "",
+          done: false,
+        };
+        res.write(`data: ${JSON.stringify(streamResponse)}\n\n`);
+      }
+
+      // Send the final chunk to indicate completion
+      const finalResponse: StreamResponse = {
+        id: Date.now().toString(),
+        content: "",
+        done: true,
+      };
+      res.write(`data: ${JSON.stringify(finalResponse)}\n\n`);
+      res.end();
+    } catch (error) {
+      console.error("Streaming error:", error);
+      throw error;
+    }
+  }
+
+  async chat(request: ChatCompletionRequest) {
     const { messages } = request;
     const joke = z.object({
       setup: z.string().describe("The setup of the joke"),
@@ -29,28 +63,5 @@ export class ChatService {
     const structuredLlm = this.model.withStructuredOutput(joke);
 
     return await structuredLlm.invoke("Tell me a joke about cats");
-    // const stream = await this.model.stream(
-    //   messages.map((msg) => ({
-    //     role: msg.role,
-    //     content: msg.content,
-    //   }))
-    // );
-
-    return "stream";
-  }
-
-  async chat(request: ChatCompletionRequest) {
-    const { messages } = request;
-
-    console.log(this.model);
-
-    // const response = await this.model.complete(
-    //   messages.map((msg) => ({
-    //     role: msg.role,
-    //     content: msg.content,
-    //   }))
-    // );
-
-    return "response";
   }
 }
