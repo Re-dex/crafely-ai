@@ -27,21 +27,8 @@ export class ChatService {
 
       // Stream each chunk to the client
       for await (const chunk of stream) {
-        const streamResponse: any = {
-          id: Date.now().toString(),
-          content: chunk.content || "",
-          done: false,
-        };
-        res.write(`data: ${JSON.stringify(streamResponse)}\n\n`);
+        res.write(chunk.content);
       }
-
-      // Send the final chunk to indicate completion
-      const finalResponse: StreamResponse = {
-        id: Date.now().toString(),
-        content: "",
-        done: true,
-      };
-      res.write(`data: ${JSON.stringify(finalResponse)}\n\n`);
       res.end();
     } catch (error) {
       console.error("Streaming error:", error);

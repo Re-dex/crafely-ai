@@ -1,10 +1,12 @@
 import express, { Express, Request, Response } from "express";
 import chatRoutes from "./routes/chat.routes";
+import cors from "cors";
 
 const app: Express = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 const startTime = new Date();
 
+app.use(cors());
 app.use(express.json());
 
 app.get("/", (req: Request, res: Response) => {
