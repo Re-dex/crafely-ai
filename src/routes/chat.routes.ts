@@ -10,6 +10,5 @@ router.post(
   validateApiKey,
   chatController.completion.bind(chatController)
 );
-// router.post('/stream', validateApiKey, chatController.streamCompletion.bind(chatController));
 
 export default router;

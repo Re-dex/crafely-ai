@@ -4,7 +4,6 @@ import cors from "cors";
 
 const app: Express = express();
 const port = process.env.PORT || 4000;
-const startTime = new Date();
 
 app.use(cors());
 app.use(express.json());

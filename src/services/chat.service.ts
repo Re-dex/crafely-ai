@@ -1,8 +1,8 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { config } from "../config/env.config";
-import { ChatCompletionRequest, StreamResponse } from "../types";
+import { ChatCompletionRequest } from "../types";
 import { z } from "zod";
-
+import { handleStream } from "../utils";
 export class ChatService {
   private model: ChatOpenAI;
 
@@ -11,29 +11,18 @@ export class ChatService {
       openAIApiKey: config.openai.apiKey,
       modelName: config.openai.model,
       temperature: config.openai.temperature,
-      streaming: true,
     });
   }
 
-  async streamChat(request: any, res: any) {
+  async streamChat(request: ChatCompletionRequest, res: any) {
     try {
       const { messages } = request;
       const stream = await this.model.stream(
         "Tell me about Bangladesh history"
       );
-
-      // Set headers for SSE
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
-      res.setHeader("Connection", "keep-alive");
-
-      for await (const chunk of stream) {
-        if (chunk.content) {
-          res.write(`data: ${JSON.stringify({ content: chunk.content })}\n\n`);
-        }
-      }
-
-      res.end();
+      await handleStream(stream, res, (chunk) => {
+        return { content: chunk.content };
+      });
     } catch (error) {
       console.error("Streaming error:", error);
       throw error;
