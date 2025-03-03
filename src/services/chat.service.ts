@@ -20,6 +20,8 @@ export class ChatService {
       const stream = await this.model.stream(
         "Tell me about Bangladesh history"
       );
+
+      // Message Instance
       await handleStream(stream, res, (chunk) => {
         return { content: chunk.content };
       });
