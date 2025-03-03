@@ -14,6 +14,7 @@ export const validateApiKey = (req: any, res: any, next: any) => {
   const apiKey = authHeader.split(" ")[1];
   // For testing purposes, you can use: crafely_sk_test_51MvH2nKj9LmXwZ
   const validApiKey = process.env.API_KEY || "crafely_sk_test_51MvH2nKj9LmXwZ";
+  
 
   if (apiKey !== validApiKey) {
     const response: ApiResponse = {
