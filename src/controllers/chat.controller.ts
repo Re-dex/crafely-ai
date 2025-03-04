@@ -11,8 +11,7 @@ export class ChatController {
 
   async completion(req: Request, res: Response<any>) {
     try {
-      const request: ChatCompletionRequest = req.body;
-      console.log("request", request);
+      const request: any = req.body;
       await this.chatService.streamChat(request, res);
     } catch (error) {
       const response: ApiResponse = {

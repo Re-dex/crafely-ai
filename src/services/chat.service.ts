@@ -1,8 +1,14 @@
 import { ChatOpenAI } from "@langchain/openai";
+import {
+  HumanMessage,
+  SystemMessage,
+  AIMessage,
+} from "@langchain/core/messages";
 import { config } from "../config/env.config";
-import { ChatCompletionRequest } from "../types";
+import { ChatCompletionRequest, ChatMessage } from "../types";
 import { z } from "zod";
-import { handleStream } from "../utils";
+import { handleStream, convertToLangChainMessages } from "../utils";
+
 export class ChatService {
   private model: ChatOpenAI;
 
@@ -14,14 +20,10 @@ export class ChatService {
     });
   }
 
-  async streamChat(request: ChatCompletionRequest, res: any) {
+  async streamChat(req: any, res: any) {
     try {
-      const { messages } = request;
-      const stream = await this.model.stream(
-        "Tell me about Bangladesh history"
-      );
-
-      // Message Instance
+      const messages = convertToLangChainMessages(req.messages);
+      const stream = await this.model.stream(messages);
       await handleStream(stream, res, (chunk) => {
         return { content: chunk.content };
       });
