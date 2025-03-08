@@ -10,5 +10,10 @@ router.post(
   validateApiKey,
   tagsController.generateTags.bind(tagsController)
 );
+router.post(
+  "/alt-text",
+  validateApiKey,
+  tagsController.generateAltText.bind(tagsController)
+);
 
 export default router;

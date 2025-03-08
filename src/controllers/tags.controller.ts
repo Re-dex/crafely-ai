@@ -26,4 +26,24 @@ export class TagsController {
       res.status(500).json(response);
     }
   }
+  async generateAltText(req: Request, res: Response<any>) {
+    try {
+      const request: any = req.body;
+      const response = await this.openaiService.vision(
+        request.url,
+        request.prompt
+      );
+      res.json({
+        success: true,
+        data: response.choices[0].message.content,
+      });
+    } catch (error) {
+      const response: ApiResponse = {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+      res.status(500).json(response);
+    }
+  }
 }
