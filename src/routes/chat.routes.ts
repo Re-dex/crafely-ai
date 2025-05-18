@@ -6,7 +6,7 @@ const router = Router();
 const chatController = new ChatController();
 
 router.post(
-  "/completions",
+  "/chat",
   validateApiKey,
   chatController.completion.bind(chatController)
 );
