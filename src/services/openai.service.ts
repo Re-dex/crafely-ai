@@ -58,6 +58,10 @@ export class OpenAiService {
     }
   }
 
+  getModel() {
+    return this.model;
+  }
+
   async vision(url: string, prompt: string) {
     console.log(prompt);
 

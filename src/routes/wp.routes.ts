@@ -1,19 +1,25 @@
 import { Router } from "express";
-import { TagsController } from "../controllers/tags.controller";
+import { WPController } from "../controllers/wp.controller";
 import { validateApiKey } from "../middleware/auth.middleware";
 
 const router = Router();
-const tagsController = new TagsController();
+const wpController = new WPController();
 
 router.post(
   "/tags",
   validateApiKey,
-  tagsController.generateTags.bind(tagsController)
+  wpController.generateTags.bind(wpController)
 );
 router.post(
   "/alt-text",
   validateApiKey,
-  tagsController.generateAltText.bind(tagsController)
+  wpController.generateAltText.bind(wpController)
+);
+
+router.post(
+  "/generate-description",
+  validateApiKey,
+  wpController.generateDescription.bind(wpController)
 );
 
 export default router;

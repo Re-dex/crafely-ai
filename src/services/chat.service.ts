@@ -1,5 +1,8 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
+import {
+  ChatPromptTemplate,
+  SystemMessagePromptTemplate,
+} from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { config } from "../config/env.config";
 import { ChatCompletionRequest } from "../types";
