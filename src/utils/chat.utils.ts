@@ -4,8 +4,6 @@ import {
   AIMessage,
 } from "@langchain/core/messages";
 import { CheerioWebBaseLoader } from "@langchain/community/document_loaders/web/cheerio";
-
-import { ChatOpenAI } from "@langchain/openai";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { ChatMessage } from "../types";
@@ -17,7 +15,21 @@ export const handleStream = async (stream: any, res: any, cb) => {
 
   try {
     for await (const chunk of stream) {
-      if (chunk.content) {
+      chunk.type = chunk.event;
+      if (chunk.event === "on_chat_model_start") {
+        chunk.type = "text_created";
+        chunk.content = "";
+      }
+      if (chunk.event === "on_chat_model_stream") {
+        chunk.type = "text_delta";
+        chunk.content = chunk.data?.chunk?.content || "";
+      }
+      if (chunk.event === "on_chain_end") {
+        chunk.type = "text_done";
+        chunk.content = chunk.data?.output?.content || "";
+      }
+
+      if (["text_created", "text_delta", "text_done"].includes(chunk.type)) {
         res.write(`data: ${JSON.stringify(cb(chunk))}\n\n`);
       }
     }

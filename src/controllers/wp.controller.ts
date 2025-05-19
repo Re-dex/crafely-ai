@@ -7,7 +7,6 @@ import {
   HumanMessagePromptTemplate,
   SystemMessagePromptTemplate,
 } from "@langchain/core/prompts";
-import { LLMChain } from "langchain/chains";
 import { RunnableSequence } from "@langchain/core/runnables";
 export class WPController {
   private openaiService: OpenAiService;
@@ -72,14 +71,20 @@ export class WPController {
         this.openaiService.getModel(),
       ]);
 
-      const stream = await chain.stream({
-        type: type,
-        name: product.name,
-        description: product.description,
-        shortDescription: product.short_description,
-      });
+      const stream = await chain.streamEvents(
+        {
+          type: type,
+          name: product.name,
+          description: product.description,
+          shortDescription: product.short_description,
+        },
+        { version: "v2" }
+      );
       await handleStream(stream, res, (chunk) => {
-        return { content: chunk.content };
+        return {
+          type: chunk.type,
+          content: chunk.content,
+        };
       });
     } catch (error) {
       console.error("Streaming error:", error);
