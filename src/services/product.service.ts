@@ -30,18 +30,8 @@ export class ProductService {
 
   async generate(req: any) {
     try {
-      const joke = z.object({
-        setup: z.string().describe("The setup of the joke"),
-        punchline: z.string().describe("The punchline to the joke"),
-        rating: z
-          .number()
-          .optional()
-          .describe("How funny the joke is, from 1 to 10"),
-      });
-      const messages = convertToLangChainMessages(req.additional_messages);
       const schema = this.model.withStructuredOutput(productSchema);
-      const response = await schema.invoke(messages);
-      return response;
+      return await schema.invoke(req.prompt);
     } catch (error) {
       console.error("Generation error:", error);
       throw error;
