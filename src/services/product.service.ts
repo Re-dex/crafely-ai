@@ -1,4 +1,4 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatOpenAI, DallEAPIWrapper } from "@langchain/openai";
 import { config } from "../config/env.config";
 import { handleStream, convertToLangChainMessages } from "../utils";
 import { productSchema } from "./productSchema";
@@ -32,6 +32,20 @@ export class ProductService {
     try {
       const schema = this.model.withStructuredOutput(productSchema);
       return await schema.invoke(req.prompt);
+    } catch (error) {
+      console.error("Generation error:", error);
+      throw error;
+    }
+  }
+  async generateImage(req: any) {
+    try {
+      const tool = new DallEAPIWrapper({
+        n: 1, // Default
+        model: "dall-e-3", // Default
+        apiKey: config.openai.apiKey,
+        style: "natural",
+      });
+      return await tool.invoke(req.prompt);
     } catch (error) {
       console.error("Generation error:", error);
       throw error;

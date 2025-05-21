@@ -40,4 +40,22 @@ export class ProductController {
       res.status(500).json(response);
     }
   }
+
+  async generateImage(req: Request, res: Response<any>) {
+    try {
+      const request: any = req.body;
+      const response = await this.productService.generateImage(request);
+      res.json({
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      const response: ApiResponse = {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+      res.status(500).json(response);
+    }
+  }
 }

@@ -16,5 +16,10 @@ router.post(
   validateApiKey,
   productController.generate.bind(productController)
 );
+router.post(
+  "/generate-image",
+  validateApiKey,
+  productController.generateImage.bind(productController)
+);
 
 export default router;
