@@ -1,4 +1,5 @@
 import { ChatOpenAI, DallEAPIWrapper } from "@langchain/openai";
+import { DuckDuckGoSearch } from "@langchain/community/tools/duckduckgo_search";
 import { config } from "../config/env.config";
 import { handleStream, convertToLangChainMessages } from "../utils";
 import { productSchema } from "./productSchema";
@@ -30,6 +31,9 @@ export class ProductService {
 
   async generate(req: any) {
     try {
+      // const tool = new DuckDuckGoSearch({ maxResults: 1 });
+      // const searchResult = await tool.invoke(req.prompt);
+      // console.log(searchResult);
       const schema = this.model.withStructuredOutput(productSchema);
       return await schema.invoke(req.prompt);
     } catch (error) {
