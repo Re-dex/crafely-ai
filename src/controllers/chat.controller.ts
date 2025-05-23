@@ -12,15 +12,7 @@ export class ChatController {
   async completion(req: Request, res: Response<any>) {
     try {
       const request: any = req.body;
-      if (request.stream) {
-        await this.chatService.streamChat(request, res);
-        return;
-      }
-      const response = await this.chatService.chat(request);
-      res.json({
-        success: true,
-        data: response,
-      });
+      await this.chatService.streamChat(request, res);
     } catch (error) {
       const response: ApiResponse = {
         success: false,

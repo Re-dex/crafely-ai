@@ -28,24 +28,18 @@ export class ChatService {
 
   async streamChat(req: any, res: any) {
     try {
-      const messages = convertToLangChainMessages(req.messages);
-      this.model.bindTools([multiply, webSearch]);
-      const stream = await this.model.stream(messages);
+      const messages = convertToLangChainMessages(req.input);
+      // this.model.bindTools([multiply, webSearch]);
+      const stream = await this.model.streamEvents(messages, { version: "v2" });
       await handleStream(stream, res, (chunk) => {
-        return { content: chunk.content };
+        return {
+          type: chunk.type,
+          content: chunk.content,
+        };
       });
     } catch (error) {
       console.error("Streaming error:", error);
       throw error;
     }
-  }
-
-  async chat(req: any) {
-    const messages = convertToLangChainMessages(req.messages);
-    let response = await this.model.invoke(messages);
-    return {
-      content: response.content,
-      role: "assistant",
-    };
   }
 }

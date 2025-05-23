@@ -16,6 +16,7 @@ export const handleStream = async (stream: any, res: any, cb) => {
   try {
     for await (const chunk of stream) {
       chunk.type = chunk.event;
+      console.log(chunk.type);
       if (chunk.event === "on_chat_model_start") {
         chunk.type = "text_created";
         chunk.content = "";
@@ -24,7 +25,7 @@ export const handleStream = async (stream: any, res: any, cb) => {
         chunk.type = "text_delta";
         chunk.content = chunk.data?.chunk?.content || "";
       }
-      if (chunk.event === "on_chain_end") {
+      if (chunk.event === "on_chat_model_end") {
         chunk.type = "text_done";
         chunk.content = chunk.data?.output?.content || "";
       }
