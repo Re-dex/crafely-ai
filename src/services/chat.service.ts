@@ -26,10 +26,7 @@ export class ChatService {
       returnMessages: true,
       chatHistory: new UpstashRedisChatMessageHistory({
         sessionId: "my_conversation",
-        config: {
-          url: "https://wired-wahoo-39758.upstash.io", // Override with your own instance's URL
-          token: "AZtOAAIjcDEzNzFkYjI3YmJmMjY0ODE2YTEwNThkNGJiMWFjNzA0ZnAxMA", // Override with your own instance's token
-        },
+        config: config.upstashRedis,
       }),
     });
     this.model = new ChatOpenAI({
