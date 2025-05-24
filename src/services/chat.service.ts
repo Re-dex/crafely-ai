@@ -5,7 +5,21 @@ import { config } from "../config/env.config";
 import { handleStream } from "../utils";
 import { MemoryService } from "./memory.service";
 
+interface ChatRequest {
+  sessionId: string;
+  input: string;
+}
+
+interface StreamChunk {
+  type: string;
+  content: string;
+}
+
 export class ChatService {
+  private static readonly CHAT_PROMPT = `You are an AI assistant,
+    previous conversation: {history}
+    Query: {input}`;
+
   private model: ChatOpenAI;
   private memoryService: MemoryService;
 
@@ -18,35 +32,37 @@ export class ChatService {
     this.memoryService = new MemoryService();
   }
 
-  async streamChat(req: any, res: any) {
+  private createChatChain(memory: any) {
+    const prompt = ChatPromptTemplate.fromTemplate(ChatService.CHAT_PROMPT);
+    return RunnableSequence.from([
+      {
+        input: (initialInput: string) => initialInput,
+        memory: () => memory.loadMemoryVariables({}),
+      },
+      {
+        input: (previousInput: any) => previousInput.input,
+        history: (previousInput: any) => previousInput.memory.history,
+      },
+      prompt,
+      this.model,
+    ]);
+  }
+
+  private async handleChatStream(stream: any, res: any): Promise<string> {
+    return handleStream(stream, res, (chunk: StreamChunk) => ({
+      type: chunk.type,
+      content: chunk.content,
+    }));
+  }
+
+  async streamChat(req: ChatRequest, res: any) {
     try {
       const memory = this.memoryService.getMemory(req.sessionId);
-      const prompt = ChatPromptTemplate.fromTemplate(
-        `You are an AI assistant,
-        previous conversation: {history}
-        Query: {input}`
-      );
-      const chain = RunnableSequence.from([
-        {
-          input: (initialInput) => initialInput,
-          memory: () => memory.loadMemoryVariables({}),
-        },
-        {
-          input: (previousInput) => previousInput.input,
-          history: (previousInput) => previousInput.memory.history,
-        },
-        prompt,
-        this.model,
-      ]);
-      const stream = chain.streamEvents(req.input, {
-        version: "v2",
-      });
-      const finalOutput = await handleStream(stream, res, (chunk) => {
-        return {
-          type: chunk.type,
-          content: chunk.content,
-        };
-      });
+      const chain = this.createChatChain(memory);
+
+      const stream = chain.streamEvents(req.input, { version: "v2" });
+      const finalOutput = await this.handleChatStream(stream, res);
+
       await this.memoryService.saveMessage({
         sessionId: req.sessionId,
         input: req.input,
