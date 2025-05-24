@@ -1,43 +1,26 @@
 import { ChatOpenAI } from "@langchain/openai";
-import {
-  ChatPromptTemplate,
-  SystemMessagePromptTemplate,
-} from "@langchain/core/prompts";
-import { StringOutputParser } from "@langchain/core/output_parsers";
-import { BufferMemory } from "langchain/memory";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
-import { UpstashRedisChatMessageHistory } from "@langchain/community/stores/message/upstash_redis";
 import { config } from "../config/env.config";
-import { ChatCompletionRequest } from "../types";
-import {
-  handleStream,
-  convertToLangChainMessages,
-  multiply,
-  webSearch,
-} from "../utils";
+import { handleStream } from "../utils";
+import { MemoryService } from "./memory.service";
 
 export class ChatService {
   private model: ChatOpenAI;
-  private memory: BufferMemory;
+  private memoryService: MemoryService;
+
   constructor() {
-    // const openAIClient = wrapOpenAI(new OpenAI());
-    this.memory = new BufferMemory({
-      memoryKey: "history",
-      returnMessages: true,
-      chatHistory: new UpstashRedisChatMessageHistory({
-        sessionId: "my_conversation",
-        config: config.upstashRedis,
-      }),
-    });
     this.model = new ChatOpenAI({
       openAIApiKey: config.openai.apiKey,
       modelName: config.openai.model,
       temperature: config.openai.temperature,
     });
+    this.memoryService = new MemoryService();
   }
 
   async streamChat(req: any, res: any) {
     try {
+      const memory = this.memoryService.getMemory(req.sessionId);
       const prompt = ChatPromptTemplate.fromTemplate(
         `You are an AI assistant,
         previous conversation: {history}
@@ -46,7 +29,7 @@ export class ChatService {
       const chain = RunnableSequence.from([
         {
           input: (initialInput) => initialInput,
-          memory: () => this.memory.loadMemoryVariables({}),
+          memory: () => memory.loadMemoryVariables({}),
         },
         {
           input: (previousInput) => previousInput.input,
@@ -64,22 +47,18 @@ export class ChatService {
           content: chunk.content,
         };
       });
-      // await this.memory.saveContext(
-      //   {
-      //     input: req.input,
-      //   },
-      //   {
-      //     output: finalOutput,
-      //   }
-      // );
+      await this.memoryService.saveMessage({
+        sessionId: req.sessionId,
+        input: req.input,
+        output: finalOutput,
+      });
     } catch (error) {
       console.error("Streaming error:", error);
       throw error;
     }
   }
 
-  async getMessages(req: Request, res: any) {
-    const memory = await this.memory.loadMemoryVariables({});
-    return memory.history;
+  async getMessages(req: any, res: any) {
+    return this.memoryService.getMessages(req.sessionId);
   }
 }

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { ChatService } from "../services/chat.service";
-import { ApiResponse, ChatCompletionRequest, StreamResponse } from "../types";
+import { ApiResponse } from "../types";
 
 export class ChatController {
   private chatService: ChatService;
