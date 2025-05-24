@@ -14,7 +14,7 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Welcome to Crafely AI Express Server");
 });
 
-app.use("/api", chatRoutes);
+app.use("/chat", chatRoutes);
 app.use("/wp", wpRoutes);
 app.use("/product", productRoute);
 

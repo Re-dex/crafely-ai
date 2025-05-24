@@ -12,11 +12,10 @@ export const handleStream = async (stream: any, res: any, cb) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
-
+  let finalOutput = "";
   try {
     for await (const chunk of stream) {
       chunk.type = chunk.event;
-      console.log(chunk.type);
       if (chunk.event === "on_chat_model_start") {
         chunk.type = "text_created";
         chunk.content = "";
@@ -28,6 +27,7 @@ export const handleStream = async (stream: any, res: any, cb) => {
       if (chunk.event === "on_chat_model_end") {
         chunk.type = "text_done";
         chunk.content = chunk.data?.output?.content || "";
+        finalOutput = chunk.content;
       }
 
       if (["text_created", "text_delta", "text_done"].includes(chunk.type)) {
@@ -35,6 +35,7 @@ export const handleStream = async (stream: any, res: any, cb) => {
       }
     }
     res.end();
+    return finalOutput;
   } catch (error) {
     console.error("Streaming error:", error);
     throw error;
