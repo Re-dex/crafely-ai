@@ -1,5 +1,5 @@
 import { ChatOpenAI, DallEAPIWrapper } from "@langchain/openai";
-import { DuckDuckGoSearch } from "@langchain/community/tools/duckduckgo_search";
+import { PromptTemplate } from "@langchain/core/prompts";
 import { config } from "../config/env.config";
 import { handleStream, convertToLangChainMessages } from "../utils";
 import { productSchema } from "./productSchema";
@@ -31,11 +31,35 @@ export class ProductService {
 
   async generate(req: any) {
     try {
-      // const tool = new DuckDuckGoSearch({ maxResults: 1 });
-      // const searchResult = await tool.invoke(req.prompt);
-      // console.log(searchResult);
+      const productPromptTemplate =
+        PromptTemplate.fromTemplate(`You are a helpful e-commerce product specialist. Generate detailed product information based on the given input.
+
+      Available Categories and Tags:
+      {context}
+
+      Input Request: {prompt}
+
+      Instructions:
+      1. Use ONLY the categories and tags provided in the context
+      2. Generate a product that matches the input requirements
+      3. Ensure the generated product details are consistent with available categories/tags
+      4. Keep descriptions professional and market-appropriate
+      5. Include all required schema fields
+      6. Maintain specified price and SKU if provided
+
+      Remember:
+      - Select categories and tags only from the provided context
+      - Ensure all specifications are realistic and market-accurate
+      - Keep product details aligned with the selected categories
+      - Include variations when applicable to the product type
+
+      Generate the product information in a structured format.`);
+      const formattedPrompt = await productPromptTemplate.format({
+        context: req.context,
+        prompt: req.prompt,
+      });
       const schema = this.model.withStructuredOutput(productSchema);
-      return await schema.invoke(req.prompt);
+      return await schema.invoke(formattedPrompt);
     } catch (error) {
       console.error("Generation error:", error);
       throw error;

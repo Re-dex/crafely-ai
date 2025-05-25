@@ -29,7 +29,7 @@ export const productSchema = z
           .describe(
             "The tags ID of the product. You can get the tag IDs from the tags List in context area."
           )
-          .optional(),
+          .nullable(),
         status: z
           .enum(["publish", "draft", "pending", "private"])
           .describe("The status of the product."),
