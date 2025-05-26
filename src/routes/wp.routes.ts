@@ -21,5 +21,6 @@ router.post(
   validateApiKey,
   wpController.generateDescription.bind(wpController)
 );
+router.post("/test", validateApiKey, wpController.tesMethod.bind(wpController));
 
 export default router;

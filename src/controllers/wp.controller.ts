@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import { OpenAiService } from "../services/openai.service";
 import { ApiResponse } from "../types";
 import { handleStream } from "../utils";
+import { HumanMessage } from "@langchain/core/messages";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 import {
   ChatPromptTemplate,
   HumanMessagePromptTemplate,
@@ -85,6 +88,45 @@ export class WPController {
           type: chunk.type,
           content: chunk.content,
         };
+      });
+    } catch (error) {
+      console.error("Streaming error:", error);
+      throw error;
+    }
+  }
+
+  async tesMethod(req: any, res: any) {
+    try {
+      const multiply = tool(
+        ({ a, b }: { a: number; b: number }): number => {
+          /**
+           * Multiply two numbers.
+           */
+          console.log("tool called");
+          return a * b;
+        },
+        {
+          name: "multiply",
+          description: "Multiply two numbers",
+          schema: z.object({
+            a: z.number(),
+            b: z.number(),
+          }),
+        }
+      );
+      const { type, product } = req.body;
+      const model = this.openaiService.getModel();
+      const llmWithTools = model.bindTools([multiply]);
+      const messages = [new HumanMessage("What is 3 * 12?")];
+      const result = await llmWithTools.invoke(messages);
+      messages.push(result);
+      const toolOutput = await multiply.invoke(result.tool_calls[0]);
+      messages.push(toolOutput);
+      const finalResult = await llmWithTools.invoke(messages);
+      console.log(finalResult.content);
+      res.json({
+        success: true,
+        data: "Testing on going...",
       });
     } catch (error) {
       console.error("Streaming error:", error);
