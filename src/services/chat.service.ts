@@ -100,6 +100,6 @@ export class ChatService {
   }
 
   async getMessages(req: any, res: any) {
-    return this.memoryService.getMessages(req.sessionId);
+    return this.memoryService.getMessages(req.query.sessionId);
   }
 }

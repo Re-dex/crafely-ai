@@ -10,7 +10,7 @@ export class ChatController {
   }
   async getMessages(req: Request, res: Response<any>) {
     try {
-      const request: any = req.body;
+      const request: any = req;
       const response = await this.chatService.getMessages(request, res);
       res.json({
         success: true,
