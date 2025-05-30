@@ -15,7 +15,6 @@ export const handleStream = async (stream: any, res: any, cb) => {
   let finalOutput = "";
   try {
     for await (const chunk of stream) {
-      chunk.type = chunk.event;
       if (chunk.event === "on_chat_model_start") {
         chunk.type = "text_created";
         chunk.content = "";
@@ -25,12 +24,21 @@ export const handleStream = async (stream: any, res: any, cb) => {
         chunk.content = chunk.data?.chunk?.content || "";
       }
       if (chunk.event === "on_chat_model_end") {
-        chunk.type = "text_done";
-        chunk.content = chunk.data?.output?.content || "";
-        finalOutput = chunk.content;
+        if (chunk.data?.output?.tool_calls.length > 0) {
+          chunk.type = "tool_call";
+          chunk.tools = chunk.data?.output?.tool_calls;
+        } else {
+          chunk.type = "text_done";
+          chunk.content = chunk.data?.output?.content || "";
+          finalOutput = chunk.content;
+        }
       }
 
-      if (["text_created", "text_delta", "text_done"].includes(chunk.type)) {
+      if (
+        ["text_created", "text_delta", "text_done", "tool_call"].includes(
+          chunk.type
+        )
+      ) {
         res.write(`data: ${JSON.stringify(cb(chunk))}\n\n`);
       }
     }

@@ -114,20 +114,28 @@ export class WPController {
           }),
         }
       );
-      const { type, product } = req.body;
+      const { type, prompt } = req.body;
       const model = this.openaiService.getModel();
       const llmWithTools = model.bindTools([multiply]);
-      const messages = [new HumanMessage("What is 3 * 12?")];
-      const result = await llmWithTools.invoke(messages);
-      messages.push(result);
-      const toolOutput = await multiply.invoke(result.tool_calls[0]);
-      messages.push(toolOutput);
-      const finalResult = await llmWithTools.invoke(messages);
-      console.log(finalResult.content);
-      res.json({
-        success: true,
-        data: "Testing on going...",
+      const messages: any[] = [new HumanMessage(prompt)];
+      const stream = llmWithTools.streamEvents(messages, {
+        version: "v2",
       });
+
+      await handleStream(stream, res, (chunk) => {
+        return {
+          type: chunk.type,
+          content: chunk.content,
+          tools: chunk.tools,
+        };
+      });
+
+      // const finalResult = await llmWithTools.invoke(messages);
+      // console.log(finalResult.content);
+      // res.json({
+      //   success: true,
+      //   data: "Testing on going...",
+      // });
     } catch (error) {
       console.error("Streaming error:", error);
       throw error;

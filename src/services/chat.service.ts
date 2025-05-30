@@ -4,6 +4,8 @@ import { RunnableSequence } from "@langchain/core/runnables";
 import { config } from "../config/env.config";
 import { handleStream } from "../utils";
 import { MemoryService } from "./memory.service";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 
 interface ChatRequest {
   sessionId: string;
@@ -13,6 +15,7 @@ interface ChatRequest {
 interface StreamChunk {
   type: string;
   content: string;
+  tools: any[];
 }
 
 export class ChatService {
@@ -32,7 +35,7 @@ export class ChatService {
     this.memoryService = new MemoryService();
   }
 
-  private createChatChain(memory: any) {
+  private createChatChain(memory: any, model) {
     const prompt = ChatPromptTemplate.fromTemplate(ChatService.CHAT_PROMPT);
     return RunnableSequence.from([
       {
@@ -44,7 +47,7 @@ export class ChatService {
         history: (previousInput: any) => previousInput.memory.history,
       },
       prompt,
-      this.model,
+      model,
     ]);
   }
 
@@ -52,15 +55,37 @@ export class ChatService {
     return handleStream(stream, res, (chunk: StreamChunk) => ({
       type: chunk.type,
       content: chunk.content,
+      tools: chunk.tools,
     }));
   }
 
   async streamChat(req: ChatRequest, res: any) {
     try {
+      const multiply = tool(
+        ({ a, b }: { a: number; b: number }): number => {
+          /**
+           * Multiply two numbers.
+           */
+          console.log("tool called");
+          return a * b;
+        },
+        {
+          name: "multiply",
+          description: "Multiply two numbers",
+          schema: z.object({
+            a: z.number(),
+            b: z.number(),
+          }),
+        }
+      );
+
+      const llmWithTools = this.model.bindTools([multiply]);
+
       const memory = this.memoryService.getMemory(req.sessionId);
-      const chain = this.createChatChain(memory);
+      const chain = this.createChatChain(memory, llmWithTools);
 
       const stream = chain.streamEvents(req.input, { version: "v2" });
+
       const finalOutput = await this.handleChatStream(stream, res);
 
       await this.memoryService.saveMessage({
