@@ -52,10 +52,10 @@ export class ChatService {
         input: (previousInput: any) => previousInput.input,
         history: (previousInput: any) => {
           const history = previousInput.memory.history;
-          const lastMessage = history[history.length - 1];
-          if (lastMessage?._getType() === "ai" && tool_outputs.length > 0) {
-            history.push(...tool_outputs);
-          }
+          // const lastMessage = history[history.length - 1];
+          // if (lastMessage?._getType() === "ai" && tool_outputs.length > 0) {
+          // }
+          history.push(...tool_outputs);
           return history;
         },
       },
