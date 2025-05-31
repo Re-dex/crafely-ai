@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { OpenAiService } from "../services/openai.service";
 import { ApiResponse } from "../types";
 import { handleStream } from "../utils";
-import { HumanMessage } from "@langchain/core/messages";
+import { HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import {
@@ -114,28 +114,26 @@ export class WPController {
           }),
         }
       );
-      const { type, prompt } = req.body;
+      const { type, product } = req.body;
       const model = this.openaiService.getModel();
       const llmWithTools = model.bindTools([multiply]);
-      const messages: any[] = [new HumanMessage(prompt)];
-      const stream = llmWithTools.streamEvents(messages, {
-        version: "v2",
+      const messages = [new HumanMessage("What is 3 * 12?")];
+      const result = await llmWithTools.invoke(messages);
+      messages.push(result);
+      const toolOutput = await multiply.invoke(result.tool_calls[0]);
+      const localToolOutput = new ToolMessage({
+        name: "",
+        content: "23",
+        tool_call_id: "",
       });
-
-      await handleStream(stream, res, (chunk) => {
-        return {
-          type: chunk.type,
-          content: chunk.content,
-          tools: chunk.tools,
-        };
+      console.log(toolOutput, localToolOutput);
+      messages.push(toolOutput);
+      const finalResult = await llmWithTools.invoke(messages);
+      console.log(finalResult.content);
+      res.json({
+        success: true,
+        data: "Testing on going...",
       });
-
-      // const finalResult = await llmWithTools.invoke(messages);
-      // console.log(finalResult.content);
-      // res.json({
-      //   success: true,
-      //   data: "Testing on going...",
-      // });
     } catch (error) {
       console.error("Streaming error:", error);
       throw error;

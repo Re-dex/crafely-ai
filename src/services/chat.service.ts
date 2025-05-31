@@ -1,6 +1,7 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
+import { ToolMessage } from "@langchain/core/messages";
 import { config } from "../config/env.config";
 import { handleStream } from "../utils";
 import { MemoryService } from "./memory.service";
@@ -10,6 +11,7 @@ import { z } from "zod";
 interface ChatRequest {
   sessionId: string;
   input: string;
+  tool_outputs: [];
 }
 
 interface StreamChunk {
@@ -35,7 +37,11 @@ export class ChatService {
     this.memoryService = new MemoryService();
   }
 
-  private createChatChain(memory: any, model) {
+  private processToolOutput = (tool_outputs = []) => {
+    return tool_outputs.map((item) => new ToolMessage(item));
+  };
+
+  private createChatChain(memory: any, model, tool_outputs) {
     const prompt = ChatPromptTemplate.fromTemplate(ChatService.CHAT_PROMPT);
     return RunnableSequence.from([
       {
@@ -44,7 +50,14 @@ export class ChatService {
       },
       {
         input: (previousInput: any) => previousInput.input,
-        history: (previousInput: any) => previousInput.memory.history,
+        history: (previousInput: any) => {
+          const history = previousInput.memory.history;
+          const lastMessage = history[history.length - 1];
+          if (lastMessage?._getType() === "ai" && tool_outputs.length > 0) {
+            history.push(...tool_outputs);
+          }
+          return history;
+        },
       },
       prompt,
       model,
@@ -82,7 +95,11 @@ export class ChatService {
       const llmWithTools = this.model.bindTools([multiply]);
 
       const memory = this.memoryService.getMemory(req.sessionId);
-      const chain = this.createChatChain(memory, llmWithTools);
+      const chain = this.createChatChain(
+        memory,
+        llmWithTools,
+        this.processToolOutput(req.tool_outputs)
+      );
 
       const stream = chain.streamEvents(req.input, { version: "v2" });
 
