@@ -16,7 +16,14 @@ export class MemoryService {
 
   async getMessages(sessionId: string) {
     const memory = this.getMemory(sessionId);
-    return memory.loadMemoryVariables({}).then((vars) => vars.history);
+    const messages = await memory
+      .loadMemoryVariables({})
+      .then((vars) => vars.history);
+    const formattedMessages = messages.map((msg) => ({
+      role: msg._getType() === "human" ? "user" : "assistant",
+      content: msg.content,
+    }));
+    return formattedMessages;
   }
 
   async saveMessage({ sessionId, input, output }) {
