@@ -1,6 +1,7 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
+import { trimMessages } from "@langchain/core/messages";
 import { ToolMessage } from "@langchain/core/messages";
 import { config } from "../config/env.config";
 import { handleStream } from "../utils";
@@ -24,7 +25,7 @@ export class ChatService {
   private static readonly CHAT_PROMPT = `You are an AI assistant,
     previous conversation: {history}
     Query: {input}`;
-
+  private static readonly MAX_TOKENS = 1000;
   private model: ChatOpenAI;
   private memoryService: MemoryService;
 
@@ -43,6 +44,12 @@ export class ChatService {
 
   private createChatChain(memory: any, model, tool_outputs) {
     const prompt = ChatPromptTemplate.fromTemplate(ChatService.CHAT_PROMPT);
+    const trimmer = trimMessages({
+      maxTokens: ChatService.MAX_TOKENS,
+      strategy: "last",
+      tokenCounter: this.model,
+      includeSystem: true,
+    });
     return RunnableSequence.from([
       {
         input: (initialInput: string) => initialInput,
@@ -50,12 +57,16 @@ export class ChatService {
       },
       {
         input: (previousInput: any) => previousInput.input,
-        history: (previousInput: any) => {
+        history: async (previousInput: any) => {
           const history = previousInput.memory.history;
-          // const lastMessage = history[history.length - 1];
-          // if (lastMessage?._getType() === "ai" && tool_outputs.length > 0) {
-          // }
-          history.push(...tool_outputs);
+
+          // Add tool outputs if they exist
+          if (tool_outputs.length > 0) {
+            history.push(...tool_outputs);
+          }
+
+          // Trim the messages
+          const trimmedHistory = await trimmer.invoke(history);
           return history;
         },
       },
