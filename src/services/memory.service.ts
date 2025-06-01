@@ -1,6 +1,7 @@
 import { BufferMemory } from "langchain/memory";
 import { UpstashRedisChatMessageHistory } from "@langchain/community/stores/message/upstash_redis";
 import { config } from "../config/env.config";
+import { AIMessage } from "@langchain/core/messages";
 
 export class MemoryService {
   getMemory(sessionId: string) {
@@ -15,10 +16,7 @@ export class MemoryService {
   }
 
   async getMessages(sessionId: string) {
-    const memory = this.getMemory(sessionId);
-    const messages = await memory
-      .loadMemoryVariables({})
-      .then((vars) => vars.history);
+    const messages = await this.getContext(sessionId);
     const formattedMessages = messages.map((msg) => ({
       role: msg._getType() === "human" ? "user" : "assistant",
       content: msg.content,
@@ -26,8 +24,34 @@ export class MemoryService {
     return formattedMessages;
   }
 
+  async getContext(sessionId: string) {
+    const memory = this.getMemory(sessionId);
+    return await memory.loadMemoryVariables({}).then((vars) => {
+      return vars.history;
+    });
+  }
+
   async saveMessage({ sessionId, input, output }) {
     const memory = this.getMemory(sessionId);
-    await memory.saveContext({ input }, { output });
+    if (input && output) {
+      await memory.saveContext({ input }, { output });
+      return;
+    }
+    if (input) {
+      await this.saveUserMessage(memory, input);
+      return;
+    }
+
+    if (output) {
+      await this.saveAiMessage(memory, output);
+    }
+  }
+
+  async saveAiMessage(memory, message) {
+    await memory.chatHistory.addAIChatMessage(message);
+  }
+
+  async saveUserMessage(memory, message) {
+    await memory.chatHistory.addUserMessage(message);
   }
 }

@@ -2,7 +2,12 @@ import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { trimMessages } from "@langchain/core/messages";
-import { ToolMessage } from "@langchain/core/messages";
+import {
+  ToolMessage,
+  SystemMessage,
+  AIMessage,
+  HumanMessage,
+} from "@langchain/core/messages";
 import { config } from "../config/env.config";
 import { handleStream } from "../utils";
 import { MemoryService } from "./memory.service";
@@ -12,13 +17,14 @@ import { z } from "zod";
 interface ChatRequest {
   sessionId: string;
   input: string;
-  tool_outputs: [];
+  tools: [];
+  signature: any;
 }
 
 interface StreamChunk {
   type: string;
   content: string;
-  tools: any[];
+  tool_call: any;
 }
 
 export class ChatService {
@@ -59,7 +65,7 @@ export class ChatService {
         input: (previousInput: any) => previousInput.input,
         history: async (previousInput: any) => {
           const history = previousInput.memory.history;
-
+          // console.log(history);
           // Add tool outputs if they exist
           if (tool_outputs.length > 0) {
             history.push(...tool_outputs);
@@ -79,7 +85,7 @@ export class ChatService {
     return handleStream(stream, res, (chunk: StreamChunk) => ({
       type: chunk.type,
       content: chunk.content,
-      tools: chunk.tools,
+      tool_call: chunk.tool_call,
     }));
   }
 
@@ -90,7 +96,6 @@ export class ChatService {
           /**
            * Multiply two numbers.
            */
-          console.log("tool called");
           return a * b;
         },
         {
@@ -105,17 +110,25 @@ export class ChatService {
 
       const llmWithTools = this.model.bindTools([multiply]);
 
-      const memory = this.memoryService.getMemory(req.sessionId);
-      const chain = this.createChatChain(
-        memory,
-        llmWithTools,
-        this.processToolOutput(req.tool_outputs)
+      const previous_messages = await this.memoryService.getContext(
+        req.sessionId
       );
+      if (req.tools?.length > 0) {
+        previous_messages.push(
+          // @ts-ignore
+          new AIMessage({ additional_kwargs: req.signatures })
+        );
+        previous_messages.push(...this.processToolOutput(req.tools));
+      } else {
+        const user_message = new HumanMessage(req.input);
+        previous_messages.push(user_message);
+      }
 
-      const stream = chain.streamEvents(req.input, { version: "v2" });
+      const stream = llmWithTools.streamEvents(previous_messages, {
+        version: "v2",
+      });
 
       const finalOutput = await this.handleChatStream(stream, res);
-
       await this.memoryService.saveMessage({
         sessionId: req.sessionId,
         input: req.input,

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { OpenAiService } from "../services/openai.service";
 import { ApiResponse } from "../types";
 import { handleStream } from "../utils";
-import { HumanMessage, ToolMessage } from "@langchain/core/messages";
+import { HumanMessage, AIMessage, ToolMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import {
@@ -121,18 +121,12 @@ export class WPController {
       const result = await llmWithTools.invoke(messages);
       messages.push(result);
       const toolOutput = await multiply.invoke(result.tool_calls[0]);
-      const localToolOutput = new ToolMessage({
-        name: "",
-        content: "23",
-        tool_call_id: "",
-      });
-      console.log(toolOutput, localToolOutput);
       messages.push(toolOutput);
       const finalResult = await llmWithTools.invoke(messages);
       console.log(finalResult.content);
       res.json({
         success: true,
-        data: "Testing on going...",
+        data: finalResult.content,
       });
     } catch (error) {
       console.error("Streaming error:", error);

@@ -12,7 +12,7 @@ export const handleStream = async (stream: any, res: any, cb) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
-  let finalOutput = "";
+  let finalOutput: any = "";
   try {
     for await (const chunk of stream) {
       if (chunk.event === "on_chat_model_start") {
@@ -26,7 +26,14 @@ export const handleStream = async (stream: any, res: any, cb) => {
       if (chunk.event === "on_chat_model_end") {
         if (chunk.data?.output?.tool_calls.length > 0) {
           chunk.type = "tool_call";
-          chunk.tools = chunk.data?.output?.tool_calls;
+          chunk.tool_call = {
+            tools: chunk.data?.output?.tool_calls,
+            signatures: chunk.data.output.additional_kwargs,
+          };
+          // chunk.signature = {
+          //   additional_kwargs: chunk.data.output.additional_kwargs,
+          // };
+          finalOutput = null;
         } else {
           chunk.type = "text_done";
           chunk.content = chunk.data?.output?.content || "";
