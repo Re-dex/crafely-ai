@@ -28,11 +28,8 @@ export const handleStream = async (stream: any, res: any, cb) => {
           chunk.type = "tool_call";
           chunk.tool_call = {
             tools: chunk.data?.output?.tool_calls,
-            signatures: chunk.data.output.additional_kwargs,
+            signatures: chunk.data?.output?.additional_kwargs,
           };
-          // chunk.signature = {
-          //   additional_kwargs: chunk.data.output.additional_kwargs,
-          // };
           finalOutput = null;
         } else {
           chunk.type = "text_done";

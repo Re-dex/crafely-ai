@@ -11,12 +11,11 @@ import {
 import { config } from "../config/env.config";
 import { handleStream } from "../utils";
 import { MemoryService } from "./memory.service";
-import { tool } from "@langchain/core/tools";
-import { z } from "zod";
+import { getDashboardSummary } from "../tools/dashboard.tools";
 
 interface ChatRequest {
   sessionId: string;
-  input: string;
+  prompt: string;
   tools: [];
   signature: any;
 }
@@ -28,9 +27,6 @@ interface StreamChunk {
 }
 
 export class ChatService {
-  private static readonly CHAT_PROMPT = `You are an AI assistant,
-    previous conversation: {history}
-    Query: {input}`;
   private static readonly MAX_TOKENS = 1000;
   private model: ChatOpenAI;
   private memoryService: MemoryService;
@@ -48,39 +44,6 @@ export class ChatService {
     return tool_outputs.map((item) => new ToolMessage(item));
   };
 
-  private createChatChain(memory: any, model, tool_outputs) {
-    const prompt = ChatPromptTemplate.fromTemplate(ChatService.CHAT_PROMPT);
-    const trimmer = trimMessages({
-      maxTokens: ChatService.MAX_TOKENS,
-      strategy: "last",
-      tokenCounter: this.model,
-      includeSystem: true,
-    });
-    return RunnableSequence.from([
-      {
-        input: (initialInput: string) => initialInput,
-        memory: () => memory.loadMemoryVariables({}),
-      },
-      {
-        input: (previousInput: any) => previousInput.input,
-        history: async (previousInput: any) => {
-          const history = previousInput.memory.history;
-          // console.log(history);
-          // Add tool outputs if they exist
-          if (tool_outputs.length > 0) {
-            history.push(...tool_outputs);
-          }
-
-          // Trim the messages
-          const trimmedHistory = await trimmer.invoke(history);
-          return history;
-        },
-      },
-      prompt,
-      model,
-    ]);
-  }
-
   private async handleChatStream(stream: any, res: any): Promise<string> {
     return handleStream(stream, res, (chunk: StreamChunk) => ({
       type: chunk.type,
@@ -91,25 +54,13 @@ export class ChatService {
 
   async streamChat(req: ChatRequest, res: any) {
     try {
-      const multiply = tool(
-        ({ a, b }: { a: number; b: number }): number => {
-          /**
-           * Multiply two numbers.
-           */
-          return a * b;
-        },
-        {
-          name: "multiply",
-          description: "Multiply two numbers",
-          schema: z.object({
-            a: z.number(),
-            b: z.number(),
-          }),
-        }
-      );
-
-      const llmWithTools = this.model.bindTools([multiply]);
-
+      const llmWithTools = this.model.bindTools([getDashboardSummary]);
+      const trimmer = trimMessages({
+        maxTokens: ChatService.MAX_TOKENS,
+        strategy: "last",
+        tokenCounter: this.model,
+        includeSystem: true,
+      });
       const previous_messages = await this.memoryService.getContext(
         req.sessionId
       );
@@ -118,20 +69,20 @@ export class ChatService {
           // @ts-ignore
           new AIMessage({ additional_kwargs: req.signatures })
         );
-        previous_messages.push(...this.processToolOutput(req.tools));
+        previous_messages.push(...this.processToolOutput(req?.tools));
       } else {
-        const user_message = new HumanMessage(req.input);
+        const user_message = new HumanMessage(req.prompt);
         previous_messages.push(user_message);
       }
-
-      const stream = llmWithTools.streamEvents(previous_messages, {
+      const trimmedHistory = await trimmer.invoke(previous_messages);
+      const stream = llmWithTools.streamEvents(trimmedHistory, {
         version: "v2",
       });
 
       const finalOutput = await this.handleChatStream(stream, res);
       await this.memoryService.saveMessage({
         sessionId: req.sessionId,
-        input: req.input,
+        input: req.prompt,
         output: finalOutput,
       });
     } catch (error) {
