@@ -1,4 +1,4 @@
-import express, { Express, Request, Response } from "express";
+import express, { Express, Request, Response, Router } from "express";
 import chatRoutes from "./routes/chat.routes";
 import wpRoutes from "./routes/wp.routes";
 import productRoute from "./routes/product.routes";
@@ -14,9 +14,12 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Welcome to Crafely AI Express Server");
 });
 
-app.use("/chat", chatRoutes);
-app.use("/wp", wpRoutes);
-app.use("/product", productRoute);
+const apiRouter = Router();
+apiRouter.use("/chat", chatRoutes);
+apiRouter.use("/wp", wpRoutes);
+apiRouter.use("/product", productRoute);
+
+app.use("/api/v1", apiRouter);
 
 app.listen(port, () => {
   console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
