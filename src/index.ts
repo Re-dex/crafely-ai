@@ -16,8 +16,7 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "../public")));
 app.get("/", (req: Request, res: Response) => {
   res.render("index", {
-    title: "Crafely AI Express Server",
-    message: "Welcome to Crafely AI Express Server",
+    title: "Crafely AI",
   });
 });
 
