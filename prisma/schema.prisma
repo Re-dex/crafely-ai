@@ -20,4 +20,28 @@ model User {
   email    String  @unique
   password String
   createdAt DateTime @default(now())
+
+  apiKeys ApiKey[]
+}
+
+
+// --- ApiKey Table ---
+model ApiKey {
+  id          String    @id @default(uuid()) // Unique ID for the API Key record
+  keyId       String    @unique // A public, non-secret ID for the API key (e.g., sk_live_abcde)
+  hashedKey   String    // The cryptographically hashed actual API key (NEVER store plain key)
+  name        String?   // User-friendly name for the key (e.g., "My Production App Key")
+  prefix      String?   // Optional: For categorizing keys (e.g., "sk_live_", "pk_test_")
+  permissions String[]  // Array of strings for granular permissions (e.g., ["read:data", "write:users"])
+  active      Boolean   @default(true) // Is the API key currently active and usable?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastUsedAt  DateTime? // Timestamp of the last successful API call made with this key
+
+  // Relation to User
+  userId      Int    // Foreign key to link to the User who owns this API key
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([userId, active]) // Improve query performance for finding a user's active keys
+  @@index([keyId]) // Useful for quick lookups of keys by their public ID
 }

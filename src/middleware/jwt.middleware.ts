@@ -17,7 +17,7 @@ export const verifyJWT = (req: any, res: any, next: any) => {
 
   try {
     const decoded: any = jwt.verify(token, JWT_SECRET);
-    req.user = decoded; // attach user info to request
+    req.user = decoded;
     next();
   } catch (err) {
     return res.status(401).json({
