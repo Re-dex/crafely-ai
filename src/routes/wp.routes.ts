@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { WPController } from "../controllers/wp.controller";
 import { validateApiKey } from "../middleware/auth.middleware";
+import { verifyJWT } from "../middleware/jwt.middleware";
 
 const router = Router();
 const wpController = new WPController();
