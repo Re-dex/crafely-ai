@@ -50,6 +50,10 @@ export class ApiKeyService {
   }
 
   async getApiKeys() {
-    return await prisma.apiKey.findMany();
+    return await prisma.apiKey.findMany({
+      include: {
+        user: true,
+      },
+    });
   }
 }
