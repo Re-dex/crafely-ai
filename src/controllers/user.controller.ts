@@ -12,7 +12,7 @@ export class UserController {
   async registration(req: Request, res: Response<any>) {
     try {
       const request: any = req.body;
-      const response = await this.userService.registration();
+      const response = await this.userService.registration(request);
       res.json({
         success: true,
         data: response,
@@ -29,10 +29,10 @@ export class UserController {
   async login(req: Request, res: Response<any>) {
     try {
       const request: any = req.body;
-
+      const response = await this.userService.login(request);
       res.json({
         success: true,
-        data: "login api",
+        data: response,
       });
     } catch (error) {
       const response: ApiResponse = {

@@ -1,12 +1,53 @@
-import pool from "../database/connection";
 import { prisma } from "../database/prisma";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 export class UserService {
-  async registration() {
-    const todo = await prisma.todo.create({
+  private JWT_SECRET = "jwt_secret_525";
+  async registration(payload: any) {
+    const hashedPassword = await bcrypt.hash(payload.password, 10);
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: payload.email },
+    });
+    if (existingUser) throw new Error("Email already exists");
+
+    const user = await prisma.user.create({
       data: {
-        title: "todo one",
+        name: payload.name,
+        email: payload.email,
+        password: hashedPassword,
       },
     });
-    return todo;
+    return user;
+  }
+
+  async login(payload) {
+    const user = await prisma.user.findUnique({
+      where: { email: payload.email },
+    });
+    if (!user) {
+      throw new Error("Invalid email or password");
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(
+      payload.password,
+      user.password
+    );
+    if (!isPasswordCorrect) {
+      throw new Error("Invalid email or password");
+    }
+
+    const token = jwt.sign({ userId: user.id }, this.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    return {
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+    };
   }
 }
