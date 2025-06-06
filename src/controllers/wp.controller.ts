@@ -2,9 +2,9 @@ import { Request, Response } from "express";
 import { OpenAiService } from "../services/openai.service";
 import { ApiResponse } from "../types";
 import { handleStream } from "../utils";
-import { HumanMessage, AIMessage, ToolMessage } from "@langchain/core/messages";
-import { tool } from "@langchain/core/tools";
-import { z } from "zod";
+import path from "path";
+import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+import { CharacterTextSplitter } from "@langchain/textsplitters";
 import {
   ChatPromptTemplate,
   HumanMessagePromptTemplate,
@@ -97,36 +97,21 @@ export class WPController {
 
   async tesMethod(req: any, res: any) {
     try {
-      const multiply = tool(
-        ({ a, b }: { a: number; b: number }): number => {
-          /**
-           * Multiply two numbers.
-           */
-          console.log("tool called");
-          return a * b;
-        },
-        {
-          name: "multiply",
-          description: "Multiply two numbers",
-          schema: z.object({
-            a: z.number(),
-            b: z.number(),
-          }),
-        }
-      );
-      const { type, product } = req.body;
-      const model = this.openaiService.getModel();
-      const llmWithTools = model.bindTools([multiply]);
-      const messages = [new HumanMessage("What is 3 * 12?")];
-      const result = await llmWithTools.invoke(messages);
-      messages.push(result);
-      const toolOutput = await multiply.invoke(result.tool_calls[0]);
-      messages.push(toolOutput);
-      const finalResult = await llmWithTools.invoke(messages);
-      console.log(finalResult.content);
+      const pdfPath = path.join(__dirname, "../../public/2.pdf");
+
+      const loader = new PDFLoader(pdfPath, {
+        splitPages: false,
+      });
+      const pages = await loader.load();
+      // console.log(pages);
+      const textSplitter = new CharacterTextSplitter({
+        chunkSize: 30,
+        chunkOverlap: 20,
+      });
+      const texts = await textSplitter.splitText(pages[0].pageContent);
       res.json({
         success: true,
-        data: finalResult.content,
+        data: texts,
       });
     } catch (error) {
       console.error("Streaming error:", error);
