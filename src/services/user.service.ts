@@ -2,7 +2,7 @@ import { prisma } from "../database/prisma";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 export class UserService {
-  private JWT_SECRET = "jwt_secret_525";
+  private JWT_SECRET = process.env.JWT_SECRET;
   async registration(payload: any) {
     const hashedPassword = await bcrypt.hash(payload.password, 10);
 

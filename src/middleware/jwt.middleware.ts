@@ -1,7 +1,7 @@
 // middleware/auth.ts (or .js if you're not using TypeScript)
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "jwt_secret_525";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export const verifyJWT = (req: any, res: any, next: any) => {
   const authHeader = req.headers["authorization"];
