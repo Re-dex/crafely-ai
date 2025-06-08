@@ -1,9 +1,5 @@
-import express, { Express, Request, Response, Router } from "express";
-import chatRoutes from "./routes/chat.routes";
-import wpRoutes from "./routes/wp.routes";
-import productRoute from "./routes/product.routes";
-import userRoute from "./routes/user.routes";
-import apiKeyRoute from "./routes/apiKey.routes";
+import express, { Express, Request, Response } from "express";
+import apiRouter from "./routes";
 import cors from "cors";
 import path from "path";
 
@@ -21,13 +17,6 @@ app.get("/", (req: Request, res: Response) => {
     title: "Crafely AI",
   });
 });
-
-const apiRouter = Router();
-apiRouter.use("/chat", chatRoutes);
-apiRouter.use("/wp", wpRoutes);
-apiRouter.use("/product", productRoute);
-apiRouter.use("/user", userRoute);
-apiRouter.use("/api-key", apiKeyRoute);
 
 app.use("/api/v1", apiRouter);
 
