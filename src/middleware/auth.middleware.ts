@@ -62,6 +62,8 @@ export async function validateApiKey(
     req.user = storedApiKey.user;
     // @ts-ignore
     req.apiKey = storedApiKey;
+    // @ts-ignore
+    // console.log(req.user);
 
     next();
   } catch (error) {

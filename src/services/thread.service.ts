@@ -4,7 +4,7 @@ export class ThreadService {
   async create(payload: any, user) {
     const _payload = {
       ...payload,
-      userId: user.userId,
+      userId: user.id,
     };
 
     const apiKey = await prisma.thread.create({
