@@ -32,6 +32,7 @@ export class UserController {
       const response = await this.userService.login(request);
       res.json({
         success: true,
+        message: "Login success",
         data: response,
       });
     } catch (error) {
