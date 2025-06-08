@@ -26,10 +26,10 @@ export class ApiKeyController {
       res.status(500).json(response);
     }
   }
-  async list(req: Request, res: Response<any>) {
+  async list(req: any, res: Response<any>) {
     try {
-      const request: any = req.body;
-      const response = await this.service.getApiKeys();
+      const { body, user } = req;
+      const response = await this.service.getApiKeys(body, user);
       res.json({
         success: true,
         data: response,

@@ -49,8 +49,11 @@ export class ApiKeyService {
     };
   }
 
-  async getApiKeys() {
+  async getApiKeys(body, user) {
     return await prisma.apiKey.findMany({
+      where: {
+        userId: user.userId,
+      },
       include: {
         user: true,
       },
