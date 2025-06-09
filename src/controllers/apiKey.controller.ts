@@ -26,10 +26,28 @@ export class ApiKeyController {
       res.status(500).json(response);
     }
   }
-  async list(req: any, res: Response<any>) {
+  async index(req: any, res: Response<any>) {
     try {
       const { body, user } = req;
       const response = await this.service.getApiKeys(body, user);
+      res.json({
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      const response: ApiResponse = {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+      res.status(500).json(response);
+    }
+  }
+
+  async delete(req: any, res: Response<any>) {
+    try {
+      const { params, user } = req;
+      const response = await this.service.deleteApiKeys(params.id);
       res.json({
         success: true,
         data: response,

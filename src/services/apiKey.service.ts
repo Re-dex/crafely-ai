@@ -59,4 +59,12 @@ export class ApiKeyService {
       },
     });
   }
+
+  async deleteApiKeys(id) {
+    return await prisma.apiKey.delete({
+      where: {
+        id: id,
+      },
+    });
+  }
 }

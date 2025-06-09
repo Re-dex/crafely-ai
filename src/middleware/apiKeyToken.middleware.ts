@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 async function compareHash(plaintext: string, hash: string): Promise<boolean> {
   return compare(plaintext, hash);
 }
-export async function validateApiKey(
+export async function validateApiKeyToken(
   req: Request,
   res: Response,
   next: NextFunction
@@ -39,7 +39,7 @@ export async function validateApiKey(
     });
 
     if (!storedApiKey) {
-      res.status(401).json({ error: "Invalid API key" });
+      res.status(401).json({ error: "Invalid API key xxx" });
       return;
     }
 
