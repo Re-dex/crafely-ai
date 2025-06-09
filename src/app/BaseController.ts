@@ -57,4 +57,12 @@ export abstract class BaseController {
   ): result is ActionResponse<T> {
     return typeof result === "object" && result !== null && "data" in result;
   }
+
+  protected handleResponse(message, data, code = 200) {
+    return {
+      message,
+      data,
+      code,
+    };
+  }
 }

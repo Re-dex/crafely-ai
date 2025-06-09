@@ -1,46 +1,35 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { ThreadService } from "../services/thread.service";
-import { ApiResponse } from "../types";
-
-export class ThreadController {
+import { BaseController } from "../app/BaseController";
+export class ThreadController extends BaseController {
   private service: ThreadService;
 
   constructor() {
+    super();
     this.service = new ThreadService();
   }
 
   async create(req: any, res: Response<any>) {
-    try {
-      const { body, user } = req;
-      const response = await this.service.create(body, user);
-      res.json({
-        success: true,
-        data: response,
-      });
-    } catch (error) {
-      const response: ApiResponse = {
-        success: false,
-        error:
-          error instanceof Error ? error.message : "Unknown error occurred",
-      };
-      res.status(500).json(response);
-    }
+    const { body, user } = req;
+    const data = await this.service.create(body, user);
+    await this.handleRequest(res, async () =>
+      this.handleResponse("Thread created successfully", data, 201)
+    );
   }
-  async list(req: any, res: Response<any>) {
-    try {
-      const { body, user } = req;
-      const response = await this.service.getApiKeys(body, user);
-      res.json({
-        success: true,
-        data: response,
-      });
-    } catch (error) {
-      const response: ApiResponse = {
-        success: false,
-        error:
-          error instanceof Error ? error.message : "Unknown error occurred",
-      };
-      res.status(500).json(response);
-    }
+
+  async index(req: any, res: Response<any>) {
+    const { user } = req;
+    const data = await this.service.getThreads(user);
+    await this.handleRequest(res, async () =>
+      this.handleResponse("Threads fetched successfully", data)
+    );
+  }
+
+  async delete(req: any, res: Response<any>) {
+    const { params } = req;
+    const data = await this.service.deleteThread(params.id);
+    await this.handleRequest(res, async () =>
+      this.handleResponse("Thread deleted successfully", data)
+    );
   }
 }

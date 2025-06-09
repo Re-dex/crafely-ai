@@ -1,47 +1,26 @@
 import { Request, Response } from "express";
 import { UserService } from "../services/user.service";
-import { ApiResponse } from "../types";
-
-export class UserController {
-  private userService: UserService;
+import { BaseController } from "../app/BaseController";
+export class UserController extends BaseController {
+  private service: UserService;
 
   constructor() {
-    this.userService = new UserService();
+    super();
+    this.service = new UserService();
   }
 
   async registration(req: Request, res: Response<any>) {
-    try {
-      const request: any = req.body;
-      const response = await this.userService.registration(request);
-      res.json({
-        success: true,
-        data: response,
-      });
-    } catch (error) {
-      const response: ApiResponse = {
-        success: false,
-        error:
-          error instanceof Error ? error.message : "Unknown error occurred",
-      };
-      res.status(500).json(response);
-    }
+    const { body } = req;
+    const data = await this.service.registration(body);
+    await this.handleRequest(res, async () =>
+      this.handleResponse("Registration has been successfully", data, 201)
+    );
   }
   async login(req: Request, res: Response<any>) {
-    try {
-      const request: any = req.body;
-      const response = await this.userService.login(request);
-      res.json({
-        success: true,
-        message: "Login success",
-        data: response,
-      });
-    } catch (error) {
-      const response: ApiResponse = {
-        success: false,
-        error:
-          error instanceof Error ? error.message : "Unknown error occurred",
-      };
-      res.status(500).json(response);
-    }
+    const { body } = req;
+    const data = await this.service.login(body);
+    await this.handleRequest(res, async () =>
+      this.handleResponse("Login has been successfully", data)
+    );
   }
 }

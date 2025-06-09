@@ -13,13 +13,21 @@ export class ThreadService {
     return apiKey;
   }
 
-  async getApiKeys(body, user) {
+  async getThreads(user) {
     return await prisma.thread.findMany({
       where: {
         userId: user.userId,
       },
       include: {
         user: true,
+      },
+    });
+  }
+
+  async deleteThread(id) {
+    return await prisma.thread.delete({
+      where: {
+        id: id,
       },
     });
   }

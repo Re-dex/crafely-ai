@@ -1,6 +1,5 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { ApiKeyService } from "../services/apiKey.service";
-import { ApiResponse } from "../types";
 import { BaseController } from "../app/BaseController";
 export class ApiKeyController extends BaseController {
   private service: ApiKeyService;
@@ -11,32 +10,26 @@ export class ApiKeyController extends BaseController {
   }
 
   async create(req: any, res: Response<any>) {
-    await this.handleRequest(res, async () => {
-      const { body, user } = req;
-      return {
-        code: 201,
-        message: "Api key created successfully",
-        data: await this.service.create(body, user),
-      };
-    });
+    const { body, user } = req;
+    const data = await this.service.create(body, user);
+    await this.handleRequest(res, async () =>
+      this.handleResponse("Api key created successfully", data, 201)
+    );
   }
+
   async index(req: any, res: Response<any>) {
-    await this.handleRequest(res, async () => {
-      const { body, user } = req;
-      return {
-        message: "Api keys fetched successfully",
-        data: await this.service.getApiKeys(body, user),
-      };
-    });
+    const { body, user } = req;
+    const data = await this.service.getApiKeys(body, user);
+    await this.handleRequest(res, async () =>
+      this.handleResponse("Api keys fetched successfully", data)
+    );
   }
 
   async delete(req: any, res: Response<any>) {
-    await this.handleRequest(res, async () => {
-      const { params } = req;
-      return {
-        message: "Api keys deleted successfully",
-        data: await this.service.deleteApiKeys(params.id),
-      };
-    });
+    const { params } = req;
+    const data = await this.service.deleteApiKeys(params.id);
+    await this.handleRequest(res, async () =>
+      this.handleResponse("Api keys deleted successfully", data)
+    );
   }
 }
