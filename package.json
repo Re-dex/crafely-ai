@@ -30,6 +30,7 @@
     "duck-duck-scrape": "^2.2.7",
     "ejs": "^3.1.10",
     "express": "^4.21.2",
+    "express-validator": "^7.2.1",
     "jsonwebtoken": "^9.0.2",
     "langchain": "^0.3.19",
     "langsmith": "^0.3.12",

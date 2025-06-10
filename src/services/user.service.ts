@@ -5,12 +5,6 @@ export class UserService {
   private JWT_SECRET = process.env.JWT_SECRET;
   async registration(payload: any) {
     const hashedPassword = await bcrypt.hash(payload.password, 10);
-
-    const existingUser = await prisma.user.findUnique({
-      where: { email: payload.email },
-    });
-    if (existingUser) throw new Error("Email already exists");
-
     const user = await prisma.user.create({
       data: {
         name: payload.name,
@@ -19,6 +13,12 @@ export class UserService {
       },
     });
     return user;
+  }
+
+  static async findByEmail(email) {
+    return await prisma.user.findUnique({
+      where: { email: email },
+    });
   }
 
   async login(payload) {

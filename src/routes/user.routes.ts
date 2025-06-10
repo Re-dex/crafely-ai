@@ -1,10 +1,14 @@
 import { Router } from "express";
 import { UserController } from "../controllers/user.controller";
-
+import { AuthValidator } from "../validator/auth.validator";
 const router = Router();
-const userController = new UserController();
+const controller = new UserController();
 
-router.post("/registration", userController.registration.bind(userController));
-router.post("/login", userController.login.bind(userController));
+router.post(
+  "/registration",
+  AuthValidator.registration,
+  controller.registration.bind(controller)
+);
+router.post("/login", AuthValidator.login, controller.login.bind(controller));
 
 export default router;
