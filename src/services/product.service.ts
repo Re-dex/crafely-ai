@@ -16,19 +16,6 @@ export class ProductService {
     });
   }
 
-  async conversation(req: any, res: any) {
-    try {
-      const messages = convertToLangChainMessages(req.additional_messages);
-      const stream = await this.model.stream(messages);
-      await handleStream(stream, res, (chunk) => {
-        return { content: chunk.content };
-      });
-    } catch (error) {
-      console.error("Streaming error:", error);
-      throw error;
-    }
-  }
-
   async generate(req: any) {
     try {
       const productPromptTemplate =

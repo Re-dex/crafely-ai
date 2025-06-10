@@ -39,7 +39,7 @@ export async function validateApiKeyToken(
     });
 
     if (!storedApiKey) {
-      res.status(401).json({ error: "Invalid API key xxx" });
+      res.status(401).json({ error: "Invalid API key" });
       return;
     }
 
