@@ -32,10 +32,18 @@ export class UserController extends BaseController {
     });
   }
   async login(req: Request, res: Response<any>) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: errors.array(),
+      });
+    }
     const { body } = req;
-    const data = await this.service.login(body);
-    await this.handleRequest(res, async () =>
-      this.handleResponse("Login has been successfully", data)
-    );
+    await this.handleRequest(res, async () => {
+      const data = await this.service.login(body);
+      return this.handleResponse("Login has been successfully", data);
+    });
   }
 }
