@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import { ProductService } from "../services/product.service";
 import { OpenAiService } from "../services/openai.service";
-
-import { ApiResponse } from "../types";
+import { BaseController } from "../app/BaseController";
 import { handleStream } from "../utils";
 import {
   ChatPromptTemplate,
@@ -10,31 +9,22 @@ import {
   SystemMessagePromptTemplate,
 } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
-export class ProductController {
+export class ProductController extends BaseController {
   private productService: ProductService;
   private openaiService: OpenAiService;
 
   constructor() {
+    super();
     this.productService = new ProductService();
     this.openaiService = new OpenAiService();
   }
 
   async generate(req: Request, res: Response<any>) {
-    try {
-      const request: any = req.body;
-      const { product } = await this.productService.generate(request);
-      res.json({
-        success: true,
-        data: product,
-      });
-    } catch (error) {
-      const response: ApiResponse = {
-        success: false,
-        error:
-          error instanceof Error ? error.message : "Unknown error occurred",
-      };
-      res.status(500).json(response);
-    }
+    this.handleRequest(req, res, async () => {
+      const { body } = req;
+      const { product } = await this.productService.generate(body);
+      return this.handleResponse("Product generate successfully", product);
+    });
   }
 
   async generateDescription(req: any, res: any) {
@@ -77,20 +67,10 @@ export class ProductController {
   }
 
   async generateImage(req: Request, res: Response<any>) {
-    try {
-      const request: any = req.body;
-      const response = await this.productService.generateImage(request);
-      res.json({
-        success: true,
-        data: response,
-      });
-    } catch (error) {
-      const response: ApiResponse = {
-        success: false,
-        error:
-          error instanceof Error ? error.message : "Unknown error occurred",
-      };
-      res.status(500).json(response);
-    }
+    this.handleRequest(req, res, async () => {
+      const { body } = req;
+      const response = await this.productService.generateImage(body);
+      return this.handleResponse("Image generate successfully", response);
+    });
   }
 }

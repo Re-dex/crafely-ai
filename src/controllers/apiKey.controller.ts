@@ -12,7 +12,7 @@ export class ApiKeyController extends BaseController {
   async create(req: any, res: Response<any>) {
     const { body, user } = req;
     const data = await this.service.create(body, user);
-    await this.handleRequest(res, async () =>
+    await this.handleRequest(req, res, async () =>
       this.handleResponse("Api key created successfully", data, 201)
     );
   }
@@ -20,7 +20,7 @@ export class ApiKeyController extends BaseController {
   async index(req: any, res: Response<any>) {
     const { body, user } = req;
     const data = await this.service.getApiKeys(body, user);
-    await this.handleRequest(res, async () =>
+    await this.handleRequest(req, res, async () =>
       this.handleResponse("Api keys fetched successfully", data)
     );
   }
@@ -28,7 +28,7 @@ export class ApiKeyController extends BaseController {
   async delete(req: any, res: Response<any>) {
     const { params } = req;
     const data = await this.service.deleteApiKeys(params.id);
-    await this.handleRequest(res, async () =>
+    await this.handleRequest(req, res, async () =>
       this.handleResponse("Api keys deleted successfully", data)
     );
   }

@@ -1,6 +1,6 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { ApiResponse } from "./ApiResponse";
-
+import { validationResult } from "express-validator";
 // Define base types
 type ActionResult<T> = T | ActionResponse<T>;
 
@@ -18,9 +18,17 @@ interface ActionResponse<T> {
 
 export abstract class BaseController {
   protected async handleRequest<T>(
+    req: Request,
     res: Response,
     action: () => Promise<ActionResult<T>>
   ): Promise<void> {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const response = ApiResponse.error("Validation failed", errors.array());
+      res.status(400).json(response);
+      return;
+    }
+
     try {
       const result = await action();
       const { code, data, message } = this.normalizeResponse<T>(result);
