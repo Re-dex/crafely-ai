@@ -28,7 +28,7 @@ export class ProductController extends BaseController {
   }
 
   async generateDescription(req: any, res: any) {
-    try {
+    this.handleRequest(req, res, async () => {
       const { type, product } = req.body;
 
       const chatPrompt = ChatPromptTemplate.fromMessages([
@@ -45,7 +45,7 @@ export class ProductController extends BaseController {
         this.openaiService.getModel(),
       ]);
 
-      const stream = await chain.streamEvents(
+      const stream = chain.streamEvents(
         {
           type: type,
           name: product.name,
@@ -60,10 +60,7 @@ export class ProductController extends BaseController {
           content: chunk.content,
         };
       });
-    } catch (error) {
-      console.error("Streaming error:", error);
-      throw error;
-    }
+    });
   }
 
   async generateImage(req: Request, res: Response<any>) {
