@@ -18,7 +18,9 @@ export class ApiKeyService {
     await prisma.apiKey.create({
       data: _payload,
     });
-    return plainTextKey;
+    return {
+      api_key: plainTextKey,
+    };
   }
 
   async generateApiKey(environment = "test", isSecret = true) {
