@@ -13,29 +13,20 @@ export async function validateApiKeyToken(
   try {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!authHeader?.startsWith("Bearer ")) {
       res
         .status(401)
         .json({ error: "API key is required in Bearer token format" });
       return;
     }
 
-    // Extract the API key from Bearer token
-    const apiKey = authHeader.split(" ")[1];
-
-    if (!apiKey) {
-      res.status(401).json({ error: "Invalid Bearer token format" });
-      return;
-    }
+    const plainTextKey = authHeader.split(" ")[1];
+    const keyIdLength = 8 + 24;
+    const keyId = plainTextKey.slice(0, keyIdLength);
 
     const storedApiKey = await prisma.apiKey.findFirst({
-      where: {
-        keyId: apiKey,
-        active: true,
-      },
-      include: {
-        user: true, // Include user details if needed
-      },
+      where: { keyId, active: true },
+      include: { user: true },
     });
 
     if (!storedApiKey) {
@@ -43,27 +34,21 @@ export async function validateApiKeyToken(
       return;
     }
 
-    // Verify the hashed key
-    // const isValidKey = await compareHash(apiKey, storedApiKey.hashedKey);
-    // if (!isValidKey) {
-    //   res.status(401).json({ error: "Invalid API key xxxx" });
-    //   return;
-    // }
+    const isValidKey = await compareHash(plainTextKey, storedApiKey.hashedKey);
+    if (!isValidKey) {
+      res.status(401).json({ error: "Invalid API key" });
+      return;
+    }
 
-    // Update last used timestamp
     await prisma.apiKey.update({
       where: { id: storedApiKey.id },
       data: { lastUsedAt: new Date() },
     });
 
-    // Add user and API key info to request for use in routes
-
     // @ts-ignore
     req.user = storedApiKey.user;
     // @ts-ignore
     req.apiKey = storedApiKey;
-    // @ts-ignore
-    // console.log(req.user);
 
     next();
   } catch (error) {

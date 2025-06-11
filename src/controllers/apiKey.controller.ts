@@ -18,8 +18,8 @@ export class ApiKeyController extends BaseController {
   }
 
   async index(req: any, res: Response<any>) {
-    const { body, user } = req;
-    const data = await this.service.getApiKeys(body, user);
+    const { user } = req;
+    const data = await this.service.getApiKeys(user.userId);
     await this.handleRequest(req, res, async () =>
       this.handleResponse("Api keys fetched successfully", data)
     );
