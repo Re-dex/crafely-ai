@@ -52,9 +52,9 @@ export class ApiKeyService {
     });
 
     return keys.map((key) => {
-      const visiblePrefix = key.keyId.slice(0, 10);
+      const visiblePrefix = key.keyId.slice(0, 7);
       const visibleSuffix = key.keyId.slice(-5);
-      const maskedKeyId = `${visiblePrefix}...................${visibleSuffix}`;
+      const maskedKeyId = `${visiblePrefix}...........................${visibleSuffix}`;
 
       return {
         id: key.id,
