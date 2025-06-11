@@ -12,23 +12,16 @@ export class ChatController extends BaseController {
   }
   async getMessages(req: Request, res: Response<any>) {
     this.handleRequest(req, res, async () => {
-      const { body } = req;
-      const response = await this.chatService.getMessages(body);
-      return this.handleResponse("Product generate successfully", response);
+      const { query } = req;
+      const response = await this.chatService.getMessages(query.sessionId);
+      return this.handleResponse("Messages fetched successfully", response);
     });
   }
 
   async completion(req: Request, res: Response<any>) {
-    try {
+    this.handleRequest(req, res, async () => {
       const request: any = req.body;
       await this.chatService.streamChat(request, res);
-    } catch (error) {
-      const response: ApiResponse = {
-        success: false,
-        error:
-          error instanceof Error ? error.message : "Unknown error occurred",
-      };
-      res.status(500).json(response);
-    }
+    });
   }
 }

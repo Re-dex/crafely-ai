@@ -91,7 +91,7 @@ export class ChatService {
     }
   }
 
-  async getMessages(req: any) {
-    return this.memoryService.getMessages(req.query.sessionId);
+  async getMessages(sessionId: any) {
+    return this.memoryService.getMessages(sessionId);
   }
 }
