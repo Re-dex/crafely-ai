@@ -17,6 +17,7 @@ model User {
 
   apiKeys     ApiKey[]
   threads     Thread[]
+  agents      Agent[]  // User has many agents
   subscriptions UserSubscription[]
 }
 
@@ -39,6 +40,24 @@ model ApiKey {
   @@index([keyId])
 }
 
+model Agent {
+  id            String    @id @default(dbgenerated("concat('agnt_', gen_random_uuid())")) @db.VarChar(255)
+  name          String
+  instructions  String
+  tools         String?    // JSON stringified array of tools
+  context       String?   // Optional context/knowledge base
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  userId        String    // Foreign key for User
+  user          User      @relation(fields: [userId], references: [id]) // Relation to User
+  threads       Thread[]  // One agent can have many threads
+
+  @@index([userId])
+  @@index([name])
+}
+
 model Thread {
   id            String    @id @default(dbgenerated("concat('thrd_', gen_random_uuid())")) @db.VarChar(255)
   name          String
@@ -51,8 +70,11 @@ model Thread {
 
   userId        String
   user          User      @relation(fields: [userId], references: [id])
+  agentId       String?
+  agent         Agent?    @relation(fields: [agentId], references: [id])
 
   @@index([userId])
+  @@index([agentId])
 }
 
 model Package {
