@@ -10,7 +10,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "vercel-build": "echo hello",
     "build:css": "postcss src/assets/css/style.css -o public/css/style.css",
-    "watch:css": "postcss src/assets/css/style.css -o public/css/style.css --watch"
+    "watch:css": "postcss src/assets/css/style.css -o public/css/style.css --watch",
+    "prisma:seed": "ts-node prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
@@ -50,5 +51,8 @@
     "prisma": "^6.9.0",
     "tailwindcss": "^4.0.6",
     "ts-node": "^10.9.2"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }

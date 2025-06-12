@@ -15,8 +15,9 @@ model User {
   password  String
   createdAt DateTime  @default(now())
 
-  apiKeys   ApiKey[]
-  threads   Thread[]
+  apiKeys     ApiKey[]
+  threads     Thread[]
+  subscriptions UserSubscription[]
 }
 
 model ApiKey {
@@ -52,4 +53,35 @@ model Thread {
   user          User      @relation(fields: [userId], references: [id])
 
   @@index([userId])
+}
+
+model Package {
+  id          String    @id @default(dbgenerated("concat('pkg_', gen_random_uuid())")) @db.VarChar(255)
+  name        String    @unique
+  description String?
+  price       Float
+  features    String[]
+  interval    String    @default("month") // month or year
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  subscriptions UserSubscription[]
+}
+
+model UserSubscription {
+  id            String    @id @default(dbgenerated("concat('sub_', gen_random_uuid())")) @db.VarChar(255)
+  status        String    @default("active") // active, cancelled, expired
+  startDate     DateTime  @default(now())
+  endDate       DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  packageId     String
+  package       Package   @relation(fields: [packageId], references: [id])
+
+  @@index([userId])
+  @@index([packageId])
 }

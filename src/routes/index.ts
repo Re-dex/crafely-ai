@@ -5,6 +5,7 @@ import productRoute from "./product.routes";
 import userRoute from "./user.routes";
 import apiKeyRoute from "./apiKey.routes";
 import threadRoutes from "./thread.routes";
+import packageRoutes from "./package.routes";
 import { apiKeyMiddleware, jwtMiddleware } from "../middleware";
 
 const apiRouter = Router();
@@ -21,6 +22,7 @@ v1Router.use("/user", userRoute);
 const adminRouter = Router();
 adminRouter.use(jwtMiddleware);
 adminRouter.use("/api-key", apiKeyRoute);
+adminRouter.use("/packages", packageRoutes); // Add package management routes
 v1Router.use("/admin", adminRouter); // /v1/admin/*
 
 /**

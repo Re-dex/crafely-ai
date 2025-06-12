@@ -90,4 +90,15 @@ export abstract class BaseController {
     const response = ApiResponse.error("Validation failed", errors);
     res.status(400).json(response);
   }
+
+  protected error = this.sendValidationError;
+
+  protected success(res: Response, data, code = 200): void {
+    const response = ApiResponse.success("Data fetched success", data);
+    res.status(code).json(response);
+  }
+  protected notFound(res: Response): void {
+    const response = ApiResponse.success("Data not found");
+    res.status(404).json(response);
+  }
 }
