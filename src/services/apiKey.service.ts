@@ -4,7 +4,7 @@ import crypto from "crypto";
 import bcrypt from "bcrypt"; // Make sure you've installed: npm install bcrypt
 
 export class ApiKeyService {
-  async create(payload: any, user) {
+  async create(payload: any, userId) {
     const { hashedKey, plainTextKey, keyId, prefix } =
       await this.generateApiKey();
     const _payload = {
@@ -12,7 +12,7 @@ export class ApiKeyService {
       hashedKey,
       keyId,
       prefix,
-      userId: user.userId,
+      userId,
     };
 
     await prisma.apiKey.create({
