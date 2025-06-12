@@ -1,33 +1,24 @@
 import { Router } from "express";
 import { PackageController } from "../controllers/package.controller";
-import { jwtMiddleware } from "../middleware";
 
 const router = Router();
 const packageController = new PackageController();
 
 // Package management routes (admin only)
-router.post("/packages", jwtMiddleware, (req, res) =>
-  packageController.createPackage(req, res)
-);
-router.get("/packages", (req, res) => packageController.getPackages(req, res));
-router.get("/packages/:id", (req, res) =>
-  packageController.getPackage(req, res)
-);
-router.put("/packages/:id", jwtMiddleware, (req, res) =>
-  packageController.updatePackage(req, res)
-);
-router.delete("/packages/:id", jwtMiddleware, (req, res) =>
-  packageController.deletePackage(req, res)
-);
+router.post("/", (req, res) => packageController.createPackage(req, res));
+router.get("/", (req, res) => packageController.getPackages(req, res));
+router.get("/:id", (req, res) => packageController.getPackage(req, res));
+router.put("/:id", (req, res) => packageController.updatePackage(req, res));
+router.delete("/:id", (req, res) => packageController.deletePackage(req, res));
 
 // Subscription routes
-router.post("/subscriptions", jwtMiddleware, (req, res) =>
+router.post("/subscription", (req, res) =>
   packageController.createSubscription(req, res)
 );
-router.get("/subscriptions/me", jwtMiddleware, (req, res) =>
+router.get("/subscription/me", (req, res) =>
   packageController.getUserSubscription(req, res)
 );
-router.post("/subscriptions/:id/cancel", jwtMiddleware, (req, res) =>
+router.post("/subscription/:id/cancel", (req, res) =>
   packageController.cancelSubscription(req, res)
 );
 

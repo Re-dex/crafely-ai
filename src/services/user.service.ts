@@ -37,7 +37,7 @@ export class UserService {
       throw new Error("Invalid email or password");
     }
 
-    const token = jwt.sign({ userId: user.id }, this.JWT_SECRET);
+    const token = jwt.sign({ id: user.id }, this.JWT_SECRET);
 
     return {
       token,

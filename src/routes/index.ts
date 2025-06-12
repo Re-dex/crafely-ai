@@ -22,7 +22,7 @@ v1Router.use("/user", userRoute);
 const adminRouter = Router();
 adminRouter.use(jwtMiddleware);
 adminRouter.use("/api-key", apiKeyRoute);
-adminRouter.use("/packages", packageRoutes); // Add package management routes
+adminRouter.use("/package", packageRoutes); // Add package management routes
 v1Router.use("/admin", adminRouter); // /v1/admin/*
 
 /**
