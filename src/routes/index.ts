@@ -24,7 +24,7 @@ const adminRouter = Router();
 adminRouter.use(jwtMiddleware);
 adminRouter.use("/api-key", apiKeyRoute);
 adminRouter.use("/package", packageRoutes); // Add package management routes
-adminRouter.use("/agent", agentRoutes); // Add agent management routes
+adminRouter.use("/agent", agentRoutes); // Add agent management
 v1Router.use("/admin", adminRouter); // /v1/admin/*
 
 /**
