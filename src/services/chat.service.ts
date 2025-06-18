@@ -11,12 +11,13 @@ import {
 import { config } from "../config/env.config";
 import { handleStream } from "../utils";
 import { MemoryService } from "./memory.service";
-import { getDashboardSummary } from "../tools/dashboard.tools";
+import { toolWrapper } from "../tools/wrapper.tools";
 
 interface ChatRequest {
   sessionId: string;
   prompt: string;
   tools: [];
+  tools_schema?: any[];
   signature: any;
 }
 
@@ -54,7 +55,7 @@ export class ChatService {
 
   async streamChat(req: ChatRequest, res: any) {
     try {
-      const llmWithTools = this.model.bindTools([getDashboardSummary]);
+      const llmWithTools = this.model.bindTools(toolWrapper(req.tools_schema));
       const trimmer = trimMessages({
         maxTokens: ChatService.MAX_TOKENS,
         strategy: "last",
