@@ -68,16 +68,15 @@ export class ChatService {
       if (req.tools?.length > 0) {
         previous_messages.push(
           // @ts-ignore
-          new AIMessage({ additional_kwargs: req.signatures })
+          new AIMessage({ content: "", additional_kwargs: req.signatures })
         );
         previous_messages.push(...this.processToolOutput(req?.tools));
       } else {
         const user_message = new HumanMessage(req.prompt);
         previous_messages.push(user_message);
       }
-      // const trimmedHistory = await trimmer.invoke(previous_messages);
-      // console.log(trimmedHistory);
-      const stream = llmWithTools.streamEvents(previous_messages, {
+      const trimmedHistory = await trimmer.invoke(previous_messages);
+      const stream = llmWithTools.streamEvents(trimmedHistory, {
         version: "v2",
       });
 
