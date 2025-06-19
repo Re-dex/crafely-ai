@@ -75,8 +75,9 @@ export class ChatService {
         const user_message = new HumanMessage(req.prompt);
         previous_messages.push(user_message);
       }
-      const trimmedHistory = await trimmer.invoke(previous_messages);
-      const stream = llmWithTools.streamEvents(trimmedHistory, {
+      // const trimmedHistory = await trimmer.invoke(previous_messages);
+      // console.log(trimmedHistory);
+      const stream = llmWithTools.streamEvents(previous_messages, {
         version: "v2",
       });
 
