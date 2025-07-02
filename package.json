@@ -52,8 +52,5 @@
     "prisma": "^6.10.1",
     "tailwindcss": "^4.1.10",
     "ts-node": "^10.9.2"
-  },
-  "prisma": {
-    "seed": "ts-node prisma/seed.ts"
   }
 }

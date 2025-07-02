@@ -17,11 +17,7 @@ export class AgentService {
         instructions: data.instructions,
         tools,
         context: data.context,
-        user: {
-          connect: {
-            id: data.userId,
-          },
-        },
+        userId: data.userId,
       },
     });
   }
@@ -30,15 +26,10 @@ export class AgentService {
     return prisma.agent.findMany({
       where: {
         deletedAt: null,
-        user: {
-          id: userId,
-        },
+        userId: userId,
       },
       orderBy: {
         createdAt: "desc",
-      },
-      include: {
-        user: true,
       },
     });
   }
@@ -49,9 +40,6 @@ export class AgentService {
         id,
         deletedAt: null,
       },
-      include: {
-        user: true,
-      },
     });
   }
 
@@ -60,9 +48,6 @@ export class AgentService {
     return prisma.agent.update({
       where: { id },
       data: updateData,
-      include: {
-        user: true,
-      },
     });
   }
 
@@ -71,9 +56,6 @@ export class AgentService {
       where: { id },
       data: {
         deletedAt: new Date(),
-      },
-      include: {
-        user: true,
       },
     });
   }

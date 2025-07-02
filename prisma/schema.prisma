@@ -8,19 +8,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String    @id @default(dbgenerated("concat('usr_', gen_random_uuid())")) @db.VarChar(255)
-  name      String
-  email     String    @unique
-  password  String
-  createdAt DateTime  @default(now())
-
-  apiKeys     ApiKey[]
-  threads     Thread[]
-  agents      Agent[]  // User has many agents
-  subscriptions UserSubscription[]
-}
-
 model ApiKey {
   id          String    @id @default(dbgenerated("concat('key_', gen_random_uuid())")) @db.VarChar(255)
   keyId       String    @unique
@@ -34,7 +21,6 @@ model ApiKey {
   lastUsedAt  DateTime?
 
   userId      String    
-  user        User      @relation(fields: [userId], references: [id])
 
   @@index([userId, active])
   @@index([keyId])
@@ -50,8 +36,7 @@ model Agent {
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
 
-  userId        String    // Foreign key for User
-  user          User      @relation(fields: [userId], references: [id]) // Relation to User
+  userId        String    // Foreign key for Clerk User ID
   threads       Thread[]  // One agent can have many threads
 
   @@index([userId])
@@ -69,7 +54,6 @@ model Thread {
   deletedAt     DateTime?
 
   userId        String
-  user          User      @relation(fields: [userId], references: [id])
   agentId       String?
   agent         Agent?    @relation(fields: [agentId], references: [id])
 
@@ -100,7 +84,6 @@ model UserSubscription {
   updatedAt     DateTime  @updatedAt
 
   userId        String
-  user          User      @relation(fields: [userId], references: [id])
   packageId     String
   package       Package   @relation(fields: [packageId], references: [id])
 

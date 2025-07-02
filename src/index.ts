@@ -3,7 +3,6 @@ import apiRouter from "./routes";
 import cors from "cors";
 import path from "path";
 import { clerkMiddleware } from "@clerk/express";
-import { clerkClient, requireAuth, getAuth } from "@clerk/express";
 const app: Express = express();
 const port = process.env.PORT || 4000;
 
@@ -27,19 +26,6 @@ const asyncHandler = (
     fn(req, res, next).catch(next);
   };
 };
-app.get(
-  "/api/v1/protected",
-  requireAuth(),
-  asyncHandler(async (req, res) => {
-    // Use `getAuth()` to get the user's `userId`
-    const { userId } = getAuth(req);
-    console.log(userId);
-    // Use Clerk's JavaScript Backend SDK to get the user's User object
-    const user = await clerkClient.users.getUser(userId);
-
-    return res.json({ user });
-  })
-);
 app.use("/api", apiRouter);
 
 app.listen(port, () => {

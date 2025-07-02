@@ -15,6 +15,8 @@ export class ApiKeyService {
       userId,
     };
 
+    console.log(_payload);
+
     await prisma.apiKey.create({
       data: _payload,
     });

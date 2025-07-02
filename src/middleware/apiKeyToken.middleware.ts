@@ -26,7 +26,6 @@ export async function validateApiKeyToken(
 
     const storedApiKey = await prisma.apiKey.findFirst({
       where: { keyId, active: true },
-      include: { user: true },
     });
 
     if (!storedApiKey) {

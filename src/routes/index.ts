@@ -2,26 +2,30 @@ import { Router, Request, Response } from "express";
 import chatRoutes from "./chat.routes";
 import wpRoutes from "./wp.routes";
 import productRoute from "./product.routes";
-import userRoute from "./user.routes";
 import apiKeyRoute from "./apiKey.routes";
 import threadRoutes from "./thread.routes";
 import packageRoutes from "./package.routes";
 import agentRoutes from "./agent.routes";
-import { apiKeyMiddleware, jwtMiddleware } from "../middleware";
+import { requireAuth, getAuth } from "@clerk/express";
 
+import { apiKeyMiddleware } from "../middleware";
 const apiRouter = Router();
 const v1Router = Router();
 
-/**
- * Public Routes - No authentication required
- */
-v1Router.use("/user", userRoute);
+const extendedRequireAuth = [
+  requireAuth(),
+  (req: any, _res: any, next: any) => {
+    const { userId } = getAuth(req);
+    req.user = { id: userId };
+    next();
+  },
+];
 
 /**
  * Admin Routes - Protected with JWT middleware
  */
 const adminRouter = Router();
-adminRouter.use(jwtMiddleware);
+adminRouter.use(extendedRequireAuth);
 adminRouter.use("/api-key", apiKeyRoute);
 adminRouter.use("/package", packageRoutes); // Add package management routes
 adminRouter.use("/agent", agentRoutes); // Add agent management

@@ -18,9 +18,6 @@ export class ThreadService {
       where: {
         userId: user.userId,
       },
-      include: {
-        user: true,
-      },
     });
   }
 
