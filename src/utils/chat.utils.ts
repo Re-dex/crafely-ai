@@ -69,23 +69,25 @@ export const convertToLangChainMessages = (messages: ChatMessage[]) => {
   });
 };
 
-export const multiply = tool(
-  ({ a, b }: { a: number; b: number }): number => {
-    /**
-     * Multiply a and b.
-     */
-    console.log("multiply", a, b);
-    return a * b;
-  },
-  {
-    name: "multiply",
-    description: "Multiply two numbers",
-    schema: z.object({
-      a: z.number(),
-      b: z.number(),
-    }),
-  }
-);
+// Define the schema separately to avoid deep nesting
+const multiplySchema = z.object({
+  a: z.number(),
+  b: z.number(),
+});
+
+// Create a function for multiplication
+const multiplyFunction = ({ a, b }: { a: number; b: number }): number => {
+  console.log("multiply", a, b);
+  return a * b;
+};
+
+// Export the multiply tool with a simpler structure
+export const multiply = {
+  name: "multiply",
+  description: "Multiply two numbers",
+  func: multiplyFunction,
+  schema: multiplySchema
+};
 
 export const webSearch = async () => {
   const loaderWithSelector = new CheerioWebBaseLoader(

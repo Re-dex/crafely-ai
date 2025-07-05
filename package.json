@@ -4,14 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node src/index.ts",
-    "serve": "nodemon src/index.ts",
-    "build": "tsc",
+    "start": "node --max-old-space-size=4096 ./node_modules/.bin/ts-node src/index.ts",
+    "serve": "node --max-old-space-size=4096 ./node_modules/.bin/nodemon src/index.ts",
+    "build": "node --max-old-space-size=4096 ./node_modules/.bin/tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "vercel-build": "echo hello",
     "build:css": "postcss src/assets/css/style.css -o public/css/style.css",
     "watch:css": "postcss src/assets/css/style.css -o public/css/style.css --watch",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:seed": "node --max-old-space-size=4096 ./node_modules/.bin/ts-node prisma/seed.ts"
   },
   "keywords": [],
   "author": "",

@@ -45,8 +45,17 @@ export class ProductService {
         context: req.context,
         prompt: req.prompt,
       });
-      const schema = this.model.withStructuredOutput(productSchema);
-      return await schema.invoke(formattedPrompt);
+      // Use a different approach to avoid excessive type instantiation
+      const response = await this.model.invoke(formattedPrompt);
+      // Parse the response content with the schema
+      // Handle both string and complex message content types
+      const content = typeof response.content === 'string' 
+        ? response.content 
+        : response.content[0].type === 'text' 
+          ? response.content[0].text 
+          : JSON.stringify(response.content);
+      const parsedResponse = productSchema.parse(JSON.parse(content));
+      return parsedResponse;
     } catch (error) {
       console.error("Generation error:", error);
       throw error;
