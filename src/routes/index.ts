@@ -25,7 +25,7 @@ const extendedRequireAuth = [
  * Admin Routes - Protected with JWT middleware
  */
 const adminRouter = Router();
-// adminRouter.use(extendedRequireAuth);
+adminRouter.use(extendedRequireAuth);
 adminRouter.use("/api-key", apiKeyRoute);
 adminRouter.use("/package", packageRoutes); // Add package management routes
 adminRouter.use("/agent", agentRoutes); // Add agent management
