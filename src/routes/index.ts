@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, ErrorRequestHandler } from "express";
 import chatRoutes from "./chat.routes";
 import wpRoutes from "./wp.routes";
 import productRoute from "./product.routes";
@@ -25,7 +25,7 @@ const extendedRequireAuth = [
  * Admin Routes - Protected with JWT middleware
  */
 const adminRouter = Router();
-adminRouter.use(extendedRequireAuth);
+// adminRouter.use(extendedRequireAuth);
 adminRouter.use("/api-key", apiKeyRoute);
 adminRouter.use("/package", packageRoutes); // Add package management routes
 adminRouter.use("/agent", agentRoutes); // Add agent management
@@ -59,5 +59,19 @@ apiRouter.use("/v1", v1Router);
 apiRouter.use((req: Request, res: Response) => {
   res.status(404).json({ error: "Route not found" });
 });
+
+// Clerk Unauthorized error handler
+// const clerkUnauthorizedHandler: ErrorRequestHandler = (err, req, res, next) => {
+//   if (err && err.status === 401) {
+//     return res.status(401).json({
+//       success: false,
+//       message: "Unauthorized",
+//       error: "Authentication required",
+//     });
+//   }
+//   next(err);
+// };
+
+// apiRouter.use(clerkUnauthorizedHandler);
 
 export default apiRouter;

@@ -19,13 +19,6 @@ app.get("/", (req: Request, res: Response) => {
   });
 });
 
-const asyncHandler = (
-  fn: (req: Request, res: Response, next: express.NextFunction) => Promise<any>
-): express.RequestHandler => {
-  return (req, res, next) => {
-    fn(req, res, next).catch(next);
-  };
-};
 app.use("/api", apiRouter);
 
 app.listen(port, () => {
