@@ -1,10 +1,10 @@
 import { prisma } from "../database/prisma";
 
 export class ThreadService {
-  async create(payload: any, user) {
+  async create(payload: any, userId) {
     const _payload = {
       ...payload,
-      userId: user.id,
+      userId,
     };
 
     const apiKey = await prisma.thread.create({
@@ -13,10 +13,10 @@ export class ThreadService {
     return apiKey;
   }
 
-  async getThreads(user) {
+  async getThreads(userId) {
     return await prisma.thread.findMany({
       where: {
-        userId: user.userId,
+        userId,
       },
     });
   }

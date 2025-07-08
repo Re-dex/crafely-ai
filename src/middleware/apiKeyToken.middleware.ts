@@ -45,9 +45,7 @@ export async function validateApiKeyToken(
     });
 
     // @ts-ignore
-    req.user = storedApiKey.user;
-    // @ts-ignore
-    req.apiKey = storedApiKey;
+    req.user = { id: storedApiKey.userId };
 
     next();
   } catch (error) {
