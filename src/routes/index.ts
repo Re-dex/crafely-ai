@@ -27,7 +27,6 @@ const extendedRequireAuth = [
 const adminRouter = Router();
 adminRouter.use(extendedRequireAuth);
 adminRouter.use("/api-key", apiKeyRoute);
-adminRouter.use("/package", packageRoutes); // Add package management routes
 adminRouter.use("/agent", agentRoutes); // Add agent management
 v1Router.use("/admin", adminRouter); // /v1/admin/*
 
@@ -39,6 +38,7 @@ v1Router.use("/wp", apiKeyMiddleware, wpRoutes);
 v1Router.use("/product", apiKeyMiddleware, productRoute);
 v1Router.use("/thread", apiKeyMiddleware, threadRoutes);
 
+v1Router.use("/package", packageRoutes); // Add package management routes
 /**
  * 404 Handler for unmatched /v1 routes
  */
