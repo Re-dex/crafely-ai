@@ -1,6 +1,5 @@
-import { Router, Request, Response, ErrorRequestHandler } from "express";
+import { Router, Request, Response } from "express";
 import chatRoutes from "./chat.routes";
-import wpRoutes from "./wp.routes";
 import productRoute from "./product.routes";
 import apiKeyRoute from "./apiKey.routes";
 import threadRoutes from "./thread.routes";
@@ -34,7 +33,6 @@ v1Router.use("/admin", adminRouter); // /v1/admin/*
  * Protected Routes - Require valid API key
  */
 v1Router.use("/chat", apiKeyMiddleware, chatRoutes);
-v1Router.use("/wp", apiKeyMiddleware, wpRoutes);
 v1Router.use("/product", apiKeyMiddleware, productRoute);
 v1Router.use("/thread", apiKeyMiddleware, threadRoutes);
 
