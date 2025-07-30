@@ -41,9 +41,7 @@ export class FreemiusService {
   ): Promise<FreemiusApiResponse<T>> {
     try {
       const { method = "GET", headers = {}, body, params } = options;
-
-      // Build URL with query parameters
-      let url = `${this.baseUrl}${endpoint}`;
+      let url = `${this.baseUrl}/products/${config.freemius.productId}${endpoint}`;
       if (params && Object.keys(params).length > 0) {
         const searchParams = new URLSearchParams();
         Object.entries(params).forEach(([key, value]) => {

@@ -5,7 +5,6 @@ import apiKeyRoute from "./apiKey.routes";
 import threadRoutes from "./thread.routes";
 import packageRoutes from "./package.routes";
 import agentRoutes from "./agent.routes";
-import freemiusRoutes from "./freemius.routes";
 
 import { requireAuth, getAuth } from "@clerk/express";
 
@@ -39,7 +38,6 @@ v1Router.use("/product", apiKeyMiddleware, productRoute);
 v1Router.use("/thread", apiKeyMiddleware, threadRoutes);
 
 v1Router.use("/package", packageRoutes); // Add package management routes
-v1Router.use("/freemius", freemiusRoutes); // Add Freemius API routes
 
 // Mount /v1 routes
 apiRouter.use("/v1", v1Router);
