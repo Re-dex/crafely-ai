@@ -5,6 +5,7 @@ import apiKeyRoute from "./apiKey.routes";
 import threadRoutes from "./thread.routes";
 import packageRoutes from "./package.routes";
 import agentRoutes from "./agent.routes";
+import freemiusRoutes from "./freemius.routes";
 import { requireAuth, getAuth } from "@clerk/express";
 
 import { apiKeyMiddleware } from "../middleware";
@@ -37,6 +38,11 @@ v1Router.use("/product", apiKeyMiddleware, productRoute);
 v1Router.use("/thread", apiKeyMiddleware, threadRoutes);
 
 v1Router.use("/package", packageRoutes); // Add package management routes
+v1Router.use("/freemius", freemiusRoutes); // Add Freemius API routes
+
+// Mount /v1 routes
+apiRouter.use("/v1", v1Router);
+
 /**
  * 404 Handler for unmatched /v1 routes
  */
@@ -47,29 +53,5 @@ v1Router.use((req: Request, res: Response) => {
     error: "API route does not match existing patterns",
   });
 });
-
-// Mount /v1 routes
-apiRouter.use("/v1", v1Router);
-
-/**
- * Global 404 Handler for non-/v1 routes
- */
-apiRouter.use((req: Request, res: Response) => {
-  res.status(404).json({ error: "Route not found" });
-});
-
-// Clerk Unauthorized error handler
-// const clerkUnauthorizedHandler: ErrorRequestHandler = (err, req, res, next) => {
-//   if (err && err.status === 401) {
-//     return res.status(401).json({
-//       success: false,
-//       message: "Unauthorized",
-//       error: "Authentication required",
-//     });
-//   }
-//   next(err);
-// };
-
-// apiRouter.use(clerkUnauthorizedHandler);
 
 export default apiRouter;

@@ -16,4 +16,9 @@ export const config = {
   auth: {
     apiKeyHeader: "x-api-key",
   },
+  freemius: {
+    baseUrl: process.env.FREEMIUS_BASE_URL || "https://api.freemius.com/v1",
+    apiKey: process.env.FREEMIUS_API_KEY || "458b3725a75fce22cb41eecdc162b5f6",
+    productId: process.env.FREEMIUS_PRODUCT_ID || "19810",
+  },
 };
