@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { BaseController } from "../app/BaseController";
 import { FreemiusService } from "../services/freemius.service";
+import { SignatureUtils } from "../utils/signature.utils";
 
 export class PaymentController extends BaseController {
   private freemiusService: FreemiusService;
@@ -13,6 +14,22 @@ export class PaymentController extends BaseController {
   async redirect(req: Request, res: Response) {
     this.handleRequest(req, res, async () => {
       // console.log("Payment redirect query:", req.query);
+
+      // Verify Freemius signature first
+      const isSignatureValid = SignatureUtils.verifyFreemiusRequest(req);
+      if (!isSignatureValid) {
+        console.error("Invalid Freemius signature");
+        return this.handleResponse(
+          "Invalid signature",
+          {
+            error: "Invalid Freemius signature",
+            query: req.query,
+          },
+          403
+        );
+      }
+
+      console.log("✅ Freemius signature verified successfully");
 
       const { subscription_id, plan_id } = req.query;
 
