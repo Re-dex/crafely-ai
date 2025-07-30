@@ -83,6 +83,26 @@ export class SignatureUtils {
       secretKey ? `${secretKey.substring(0, 8)}...` : "NOT SET"
     );
 
+    // Try different URL formats
+    const urlVariations = [
+      cleanUrl,
+      cleanUrl.replace("http://", "https://"),
+      cleanUrl.replace("api.crafely.space", "www.crafely.space"),
+      cleanUrl.replace("api.crafely.space", "crafely.space"),
+    ];
+
+    for (let i = 0; i < urlVariations.length; i++) {
+      const testUrl = urlVariations[i];
+      const testSignature = crypto
+        .createHmac("sha256", secretKey)
+        .update(testUrl)
+        .digest("hex");
+
+      console.log(`Test ${i + 1} - URL: ${testUrl}`);
+      console.log(`Test ${i + 1} - Signature: ${testSignature}`);
+      console.log(`Test ${i + 1} - Match: ${testSignature === signature}`);
+    }
+
     // Calculate what the signature should be
     const calculatedSignature = crypto
       .createHmac("sha256", secretKey)
