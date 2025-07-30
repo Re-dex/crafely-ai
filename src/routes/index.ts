@@ -6,6 +6,7 @@ import threadRoutes from "./thread.routes";
 import packageRoutes from "./package.routes";
 import agentRoutes from "./agent.routes";
 import freemiusRoutes from "./freemius.routes";
+
 import { requireAuth, getAuth } from "@clerk/express";
 
 import { apiKeyMiddleware } from "../middleware";

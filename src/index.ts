@@ -1,5 +1,6 @@
-import express, { Express, Request, Response } from "express";
+import express, { Express } from "express";
 import apiRouter from "./routes";
+import webRoutes from "./routes/web.routes";
 import cors from "cors";
 import path from "path";
 import { clerkMiddleware } from "@clerk/express";
@@ -13,11 +14,9 @@ app.use(express.json());
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "../public")));
-app.get("/", (req: Request, res: Response) => {
-  res.render("index", {
-    title: "Crafely AI",
-  });
-});
+
+// Web routes
+app.use("/", webRoutes);
 
 app.use("/api", apiRouter);
 
