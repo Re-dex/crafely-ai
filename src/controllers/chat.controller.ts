@@ -24,4 +24,12 @@ export class ChatController extends BaseController {
       await this.chatService.streamChat(request, res);
     });
   }
+
+  async parseCompletion(req: Request, res: Response<any>) {
+    this.handleRequest(req, res, async () => {
+      const request: any = req.body;
+      const response = await this.chatService.parseCompletion(request);
+      return this.handleResponse("Completion parsed successfully", response);
+    });
+  }
 }

@@ -8,4 +8,8 @@ export class ChatValidator {
   static readonly messages: ValidationChain[] = [
     query("sessionId").trim().notEmpty().withMessage("sessionId is required"),
   ];
+  static readonly parseCompletion: ValidationChain[] = [
+    body("sessionId").trim().notEmpty().withMessage("sessionId is required"),
+    body("prompt").trim().optional(),
+  ];
 }

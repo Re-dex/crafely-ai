@@ -9,6 +9,11 @@ router.post(
   ChatValidator.completion,
   chatController.completion.bind(chatController)
 );
+router.post(
+  "/completion/parse",
+  ChatValidator.parseCompletion,
+  chatController.parseCompletion.bind(chatController)
+);
 router.get(
   "/messages",
   ChatValidator.messages,

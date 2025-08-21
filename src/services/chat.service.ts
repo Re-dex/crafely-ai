@@ -12,7 +12,24 @@ import { config } from "../config/env.config";
 import { handleStream } from "../utils";
 import { MemoryService } from "./memory.service";
 import { toolWrapper } from "../tools/wrapper.tools";
+import { z } from "zod";
 
+const ResponseFormatter = z.object({
+  presentation_title: z.string().describe("The title of the presentation"),
+  slides: z
+    .array(
+      z.object({
+        title: z.string().describe("The title of the slide"),
+        content: z.string().describe("The content/body of the slide"),
+        recommendation: z
+          .string()
+          .describe(
+            "A recommendation for the slide, AI will provide recommendation how slide may be improved"
+          ),
+      })
+    )
+    .describe("The slides of the presentation, each with a title and content"),
+});
 interface ChatRequest {
   sessionId: string;
   prompt: string;
@@ -94,5 +111,13 @@ export class ChatService {
 
   async getMessages(sessionId: any) {
     return this.memoryService.getMessages(sessionId);
+  }
+
+  async parseCompletion(request: any) {
+    const { sessionId, prompt } = request;
+    const modelWithStructure =
+      this.model.withStructuredOutput(ResponseFormatter);
+    const response = await modelWithStructure.invoke(prompt);
+    return response;
   }
 }
