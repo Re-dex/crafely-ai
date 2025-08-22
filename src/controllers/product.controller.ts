@@ -9,20 +9,32 @@ import {
   SystemMessagePromptTemplate,
 } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
+import { UsageService } from "../services/usage.service";
 export class ProductController extends BaseController {
   private productService: ProductService;
   private openaiService: OpenAiService;
+  private usageService: UsageService;
 
   constructor() {
     super();
     this.productService = new ProductService();
     this.openaiService = new OpenAiService();
+    this.usageService = new UsageService();
   }
 
-  async generate(req: Request, res: Response<any>) {
+  async generate(req: any, res: Response<any>) {
     this.handleRequest(req, res, async () => {
       const { body } = req;
       const { product } = await this.productService.generate(body);
+      if (req.apiKey) {
+        await this.usageService.create({
+          apiKeyId: req.apiKey.id,
+          userId: req.user?.id,
+          provider: "openai",
+          model: body?.model || undefined,
+          type: "product-generate",
+        });
+      }
       return this.handleResponse("Product generate successfully", product);
     });
   }
@@ -60,13 +72,31 @@ export class ProductController extends BaseController {
           content: chunk.content,
         };
       });
+      if (req.apiKey) {
+        await this.usageService.create({
+          apiKeyId: req.apiKey.id,
+          userId: req.user?.id,
+          provider: "openai",
+          model: undefined,
+          type: "product-description",
+        });
+      }
     });
   }
 
-  async generateImage(req: Request, res: Response<any>) {
+  async generateImage(req: any, res: Response<any>) {
     this.handleRequest(req, res, async () => {
       const { body } = req;
       const response = await this.productService.generateImage(body);
+      if (req.apiKey) {
+        await this.usageService.create({
+          apiKeyId: req.apiKey.id,
+          userId: req.user?.id,
+          provider: "openai",
+          model: "dall-e-3",
+          type: "image-generate",
+        });
+      }
       return this.handleResponse("Image generate successfully", response);
     });
   }

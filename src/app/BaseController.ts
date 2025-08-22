@@ -39,8 +39,7 @@ export abstract class BaseController {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error occurred";
-      const errorCode =
-        error instanceof Error && "code" in error ? (error as any).code : 500;
+      const errorCode = this.resolveHttpStatus(error);
       const response = ApiResponse.error(errorMessage, error);
       res.status(errorCode).json(response);
     }
@@ -74,6 +73,32 @@ export abstract class BaseController {
       data,
       code,
     };
+  }
+
+  private resolveHttpStatus(error: unknown): number {
+    // Prefer explicit numeric status on the error
+    const anyError: any = error as any;
+    if (typeof anyError?.status === "number") return anyError.status;
+    if (typeof anyError?.statusCode === "number") return anyError.statusCode;
+    if (typeof anyError?.code === "number") return anyError.code;
+
+    // Handle Prisma known error codes (strings like "P2025")
+    if (typeof anyError?.code === "string") {
+      switch (anyError.code) {
+        case "P2002": // Unique constraint violation
+          return 409;
+        case "P2025": // Record not found
+          return 404;
+        case "P2003": // FK constraint failed
+          return 400;
+        case "P2021": // Table not found / invalid table
+          return 500;
+        default:
+          return 500;
+      }
+    }
+
+    return 500;
   }
   protected validateRequest(req: Request): {
     isValid: boolean;

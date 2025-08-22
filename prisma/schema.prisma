@@ -22,6 +22,8 @@ model ApiKey {
 
   userId      String    
 
+  usages      Usage[]
+
   @@index([userId, active])
   @@index([keyId])
 }
@@ -89,4 +91,33 @@ model UserSubscription {
 
   @@index([userId])
   @@index([packageId])
+}
+
+model Usage {
+  id           String    @id @default(dbgenerated("concat('use_', gen_random_uuid())")) @db.VarChar(255)
+  createdAt    DateTime  @default(now())
+
+  // Links
+  apiKeyId     String
+  apiKey       ApiKey    @relation(fields: [apiKeyId], references: [id])
+  userId       String
+
+  // What was used
+  provider     String?
+  model        String?
+  type         String?   // chat, image, embeddings, etc.
+
+  // Token and cost info
+  tokensIn     Int?
+  tokensOut    Int?
+  tokensTotal  Int?
+  cost         Decimal?  @db.Decimal(10, 6)
+  currency     String?   @default("usd")
+
+  // Arbitrary details
+  metadata     Json?
+
+  @@index([apiKeyId, createdAt])
+  @@index([userId, createdAt])
+  @@index([provider, model])
 }

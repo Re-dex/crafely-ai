@@ -5,6 +5,7 @@ import apiKeyRoute from "./apiKey.routes";
 import threadRoutes from "./thread.routes";
 import packageRoutes from "./package.routes";
 import agentRoutes from "./agent.routes";
+import usageRoutes from "./usage.routes";
 
 import { requireAuth, getAuth } from "@clerk/express";
 
@@ -28,6 +29,7 @@ const adminRouter = Router();
 adminRouter.use(extendedRequireAuth);
 adminRouter.use("/api-key", apiKeyRoute);
 adminRouter.use("/agent", agentRoutes); // Add agent management
+adminRouter.use("/usage", usageRoutes);
 v1Router.use("/admin", adminRouter); // /v1/admin/*
 
 /**
@@ -36,6 +38,7 @@ v1Router.use("/admin", adminRouter); // /v1/admin/*
 v1Router.use("/chat", apiKeyMiddleware, chatRoutes);
 v1Router.use("/product", apiKeyMiddleware, productRoute);
 v1Router.use("/thread", apiKeyMiddleware, threadRoutes);
+v1Router.use("/usage", apiKeyMiddleware, usageRoutes);
 
 v1Router.use("/package", packageRoutes); // Add package management routes
 

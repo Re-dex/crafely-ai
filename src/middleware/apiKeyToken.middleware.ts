@@ -46,6 +46,8 @@ export async function validateApiKeyToken(
 
     // @ts-ignore
     req.user = { id: storedApiKey.userId };
+    // @ts-ignore attach the api key for downstream usage logging
+    req.apiKey = storedApiKey;
 
     next();
   } catch (error) {
