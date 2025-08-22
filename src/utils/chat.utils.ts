@@ -4,7 +4,6 @@ import {
   AIMessage,
 } from "@langchain/core/messages";
 import { CheerioWebBaseLoader } from "@langchain/community/document_loaders/web/cheerio";
-import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { ChatMessage } from "../types";
 export const handleStream = async (stream: any, res: any, cb) => {
@@ -54,8 +53,12 @@ export const handleStream = async (stream: any, res: any, cb) => {
   }
 };
 
-export const convertToLangChainMessages = (messages: ChatMessage[]) => {
-  return messages.map((message) => {
+export const convertToLangChainMessages = (data: string | ChatMessage[]) => {
+  if (typeof data === "string") {
+    return [new HumanMessage(data)];
+  }
+  return (data || []).map((message) => {
+    console.log(message);
     switch (message.role) {
       case "system":
         return new SystemMessage(message.content);
@@ -86,7 +89,7 @@ export const multiply = {
   name: "multiply",
   description: "Multiply two numbers",
   func: multiplyFunction,
-  schema: multiplySchema
+  schema: multiplySchema,
 };
 
 export const webSearch = async () => {

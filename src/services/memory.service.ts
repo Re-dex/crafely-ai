@@ -33,10 +33,17 @@ export class MemoryService {
 
   async saveMessage({ sessionId, input, output }) {
     const memory = this.getMemory(sessionId);
-    if (input && output) {
+    if (!Array.isArray(input) && output) {
       await memory.saveContext({ input }, { output });
       return;
     }
+
+    if (Array.isArray(input) && output) {
+      await Promise.all(input.map((msg) => this.saveUserMessage(memory, msg)));
+      await this.saveAiMessage(memory, output);
+      return;
+    }
+
     if (input) {
       await this.saveUserMessage(memory, input);
       return;

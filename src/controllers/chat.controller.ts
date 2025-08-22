@@ -19,10 +19,15 @@ export class ChatController extends BaseController {
   }
 
   async completion(req: Request, res: Response<any>) {
-    this.handleRequest(req, res, async () => {
-      const request: any = req.body;
-      await this.chatService.streamChat(request, res);
-    });
+    try {
+      await this.chatService.streamChat(req.body, res);
+    } catch (error: any) {
+      console.error("Streaming error:", error);
+      res.status(500).json({
+        message: "Streaming error",
+        error: error.message || error,
+      });
+    }
   }
 
   async parseCompletion(req: Request, res: Response<any>) {

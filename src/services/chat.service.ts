@@ -1,12 +1,12 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { RunnableSequence } from "@langchain/core/runnables";
+import { convertToLangChainMessages } from "../utils";
 import { trimMessages } from "@langchain/core/messages";
 import {
   ToolMessage,
   SystemMessage,
   AIMessage,
   HumanMessage,
+  BaseMessage,
 } from "@langchain/core/messages";
 import { config } from "../config/env.config";
 import { handleStream } from "../utils";
@@ -32,7 +32,8 @@ const ResponseFormatter = z.object({
 });
 interface ChatRequest {
   sessionId: string;
-  prompt: string;
+  prompt: string | any[];
+  instructions: string;
   tools: [];
   tools_schema?: any[];
   signature: any;
@@ -79,7 +80,7 @@ export class ChatService {
         tokenCounter: this.model,
         includeSystem: true,
       });
-      const previous_messages = await this.memoryService.getContext(
+      let previous_messages = await this.memoryService.getContext(
         req.sessionId
       );
       if (req.tools?.length > 0) {
@@ -89,9 +90,14 @@ export class ChatService {
         );
         previous_messages.push(...this.processToolOutput(req?.tools));
       } else {
-        const user_message = new HumanMessage(req.prompt);
-        previous_messages.push(user_message);
+        const system_message = new SystemMessage(req.instructions);
+        previous_messages.push(system_message);
+        const prompt = convertToLangChainMessages(req.prompt);
+        previous_messages = [...previous_messages, ...prompt];
       }
+
+      console.log(previous_messages);
+
       const trimmedHistory = await trimmer.invoke(previous_messages);
       const stream = llmWithTools.streamEvents(trimmedHistory, {
         version: "v2",

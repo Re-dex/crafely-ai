@@ -1,7 +1,6 @@
 import { ChatOpenAI, DallEAPIWrapper } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { config } from "../config/env.config";
-import { handleStream, convertToLangChainMessages } from "../utils";
 import { productSchema } from "./productSchema";
 import { z } from "zod";
 
@@ -49,10 +48,11 @@ export class ProductService {
       const response = await this.model.invoke(formattedPrompt);
       // Parse the response content with the schema
       // Handle both string and complex message content types
-      const content = typeof response.content === 'string' 
-        ? response.content 
-        : response.content[0].type === 'text' 
-          ? response.content[0].text 
+      const content =
+        typeof response.content === "string"
+          ? response.content
+          : response.content[0].type === "text"
+          ? response.content[0].text
           : JSON.stringify(response.content);
       const parsedResponse = productSchema.parse(JSON.parse(content));
       return parsedResponse;
