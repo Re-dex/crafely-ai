@@ -3,8 +3,6 @@ import {
   SystemMessage,
   AIMessage,
 } from "@langchain/core/messages";
-import { CheerioWebBaseLoader } from "@langchain/community/document_loaders/web/cheerio";
-import { z } from "zod";
 import { ChatMessage } from "../types";
 export const handleStream = async (stream: any, res: any, cb) => {
   // Set headers for SSE
@@ -50,7 +48,6 @@ export const handleStream = async (stream: any, res: any, cb) => {
       }
     }
     res.end();
-    console.log("finalOutput", finalOutput);
     return finalOutput;
   } catch (error) {
     console.error("Streaming error:", error);
@@ -63,7 +60,6 @@ export const convertToLangChainMessages = (data: string | ChatMessage[]) => {
     return [new HumanMessage(data)];
   }
   return (data || []).map((message) => {
-    console.log(message);
     switch (message.role) {
       case "system":
         return new SystemMessage(message.content);
@@ -75,36 +71,4 @@ export const convertToLangChainMessages = (data: string | ChatMessage[]) => {
         throw new Error(`Unsupported message role: ${message.role}`);
     }
   });
-};
-
-// Define the schema separately to avoid deep nesting
-const multiplySchema = z.object({
-  a: z.number(),
-  b: z.number(),
-});
-
-// Create a function for multiplication
-const multiplyFunction = ({ a, b }: { a: number; b: number }): number => {
-  console.log("multiply", a, b);
-  return a * b;
-};
-
-// Export the multiply tool with a simpler structure
-export const multiply = {
-  name: "multiply",
-  description: "Multiply two numbers",
-  func: multiplyFunction,
-  schema: multiplySchema,
-};
-
-export const webSearch = async () => {
-  const loaderWithSelector = new CheerioWebBaseLoader(
-    "https://news.ycombinator.com/item?id=34817881",
-    {
-      selector: "p",
-    }
-  );
-
-  const docsWithSelector = await loaderWithSelector.load();
-  docsWithSelector[0].pageContent;
 };
