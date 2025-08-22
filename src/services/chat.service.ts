@@ -92,8 +92,10 @@ export class ChatService {
         );
         previous_messages.push(...this.processToolOutput(req?.tools));
       } else {
-        const system_message = new SystemMessage(req.instructions);
-        previous_messages.push(system_message);
+        if (req.instructions) {
+          const system_message = new SystemMessage(req.instructions);
+          previous_messages.push(system_message);
+        }
         const prompt = convertToLangChainMessages(req.prompt);
         previous_messages = [...previous_messages, ...prompt];
       }
