@@ -73,6 +73,7 @@ export class ChatService {
 
   async streamChat(req: ChatRequest, res: any) {
     try {
+      let previous_messages = [];
       const llmWithTools = this.model.bindTools(toolWrapper(req.tools_schema));
       const trimmer = trimMessages({
         maxTokens: ChatService.MAX_TOKENS,
@@ -80,9 +81,10 @@ export class ChatService {
         tokenCounter: this.model,
         includeSystem: true,
       });
-      let previous_messages = await this.memoryService.getContext(
-        req.sessionId
-      );
+      if (req.sessionId) {
+        previous_messages = await this.memoryService.getContext(req.sessionId);
+      }
+
       if (req.tools?.length > 0) {
         previous_messages.push(
           // @ts-ignore
@@ -95,20 +97,19 @@ export class ChatService {
         const prompt = convertToLangChainMessages(req.prompt);
         previous_messages = [...previous_messages, ...prompt];
       }
-
-      console.log(previous_messages);
-
       const trimmedHistory = await trimmer.invoke(previous_messages);
       const stream = llmWithTools.streamEvents(trimmedHistory, {
         version: "v2",
       });
 
       const finalOutput = await this.handleChatStream(stream, res);
-      await this.memoryService.saveMessage({
-        sessionId: req.sessionId,
-        input: req.prompt,
-        output: finalOutput,
-      });
+      if (req.sessionId) {
+        await this.memoryService.saveMessage({
+          sessionId: req.sessionId,
+          input: req.prompt,
+          output: finalOutput,
+        });
+      }
     } catch (error) {
       console.error("Streaming error:", error);
       throw error;
