@@ -30,6 +30,10 @@ const ResponseFormatter = z.object({
     )
     .describe("The slides of the presentation, each with a title and content"),
 });
+
+// Add type definition for the response
+type ResponseFormatterType = z.infer<typeof ResponseFormatter>;
+
 interface ChatRequest {
   sessionId: string;
   prompt: string | any[];
@@ -124,9 +128,15 @@ export class ChatService {
 
   async parseCompletion(request: any) {
     const { sessionId, prompt } = request;
-    const modelWithStructure =
-      this.model.withStructuredOutput(ResponseFormatter);
-    const response = await modelWithStructure.invoke(prompt);
-    return response;
+    try {
+      const modelWithStructure = this.model.withStructuredOutput(
+        ResponseFormatter as any
+      ) as ChatOpenAI;
+      const response = await modelWithStructure.invoke(prompt);
+      return response;
+    } catch (error) {
+      console.error('Error in parseCompletion:', error);
+      throw error;
+    }
   }
 }
