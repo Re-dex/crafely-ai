@@ -3,17 +3,17 @@ import { ChatService } from "../services/chat.service";
 import { config } from "../config/env.config";
 import { BaseController } from "../app/BaseController";
 import { UsageService } from "../services/usage.service";
-import { TokenPriceCalculatorService } from "../services/tokenPrice.service";
+import { UsageRecorderService } from "../services/usageRecorder.service";
 
 export class ChatController extends BaseController {
   private chatService: ChatService;
   private usageService: UsageService;
-  private tokenPriceCalculatorService: TokenPriceCalculatorService;
+  private usageRecorder: UsageRecorderService;
   constructor() {
     super();
     this.chatService = new ChatService();
     this.usageService = new UsageService();
-    this.tokenPriceCalculatorService = new TokenPriceCalculatorService();
+    this.usageRecorder = new UsageRecorderService(this.usageService);
   }
   async getMessages(req: Request, res: Response<any>) {
     this.handleRequest(req, res, async () => {
@@ -26,27 +26,9 @@ export class ChatController extends BaseController {
   async completion(req: any, res: Response<any>) {
     try {
       const response = await this.chatService.streamChat(req.body, res);
-      const { input_tokens, output_tokens } = response.usage_metadata;
-      const { inputCost, outputCost } =
-        this.tokenPriceCalculatorService.calculate({
-          model: config.openai.model,
-          inputTokens: input_tokens,
-          outputTokens: output_tokens,
-        });
-      if (req.apiKey) {
-        await this.usageService.create({
-          apiKeyId: req.apiKey.id,
-          userId: req.user?.id,
-          provider: "openai",
-          tokensIn: input_tokens,
-          tokensOut: output_tokens,
-          tokensTotal: response.usage_metadata.total_tokens,
-          model: config.openai.model || undefined,
-          cost: inputCost + outputCost,
-          type: "chat",
-          metadata: { sessionId: req.body?.sessionId },
-        });
-      }
+      await this.usageRecorder.recordFromRequest(req, response.usage_metadata, {
+        model: config.openai.model,
+      });
     } catch (error: any) {
       console.error("Streaming error:", error);
       res.status(500).json({
