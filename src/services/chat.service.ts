@@ -67,7 +67,10 @@ export class ChatService {
     return tool_outputs.map((item) => new ToolMessage(item));
   };
 
-  private async handleChatStream(stream: any, res: any): Promise<string> {
+  private async handleChatStream(
+    stream: any,
+    res: any
+  ): Promise<{ content: string; usage_metadata: any }> {
     return handleStream(stream, res, (chunk: StreamChunk) => ({
       type: chunk.type,
       content: chunk.content,
@@ -108,14 +111,18 @@ export class ChatService {
         version: "v2",
       });
 
-      const finalOutput = await this.handleChatStream(stream, res);
+      const { content, usage_metadata } = await this.handleChatStream(
+        stream,
+        res
+      );
       if (req.sessionId) {
         await this.memoryService.saveMessage({
           sessionId: req.sessionId,
           input: req.prompt,
-          output: finalOutput,
+          output: content,
         });
       }
+      return { content, usage_metadata };
     } catch (error) {
       console.error("Streaming error:", error);
       throw error;
@@ -135,7 +142,7 @@ export class ChatService {
       const response = await modelWithStructure.invoke(prompt);
       return response;
     } catch (error) {
-      console.error('Error in parseCompletion:', error);
+      console.error("Error in parseCompletion:", error);
       throw error;
     }
   }
