@@ -133,14 +133,20 @@ export class ChatService {
     return this.memoryService.getMessages(sessionId);
   }
 
-  async parseCompletion(request: any) {
-    const { sessionId, prompt } = request;
+  async parseCompletion(req: any) {
     try {
+      let messages = [];
+      const prompt = convertToLangChainMessages(req.prompt);
+      messages = [...messages, ...prompt];
+      if (req.instructions) {
+        const system_message = new SystemMessage(req.instructions);
+        messages.push(system_message);
+      }
+
       const modelWithStructure = this.model.withStructuredOutput(
         ResponseFormatter as any
       ) as ChatOpenAI;
-      const response = await modelWithStructure.invoke(prompt);
-      return response;
+      return await modelWithStructure.invoke(messages);
     } catch (error) {
       console.error("Error in parseCompletion:", error);
       throw error;

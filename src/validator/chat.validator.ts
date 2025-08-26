@@ -11,6 +11,7 @@ export class ChatValidator {
   ];
   static readonly parseCompletion: ValidationChain[] = [
     body("sessionId").trim().notEmpty().withMessage("sessionId is required"),
+    body("instructions").trim().optional(),
     body("prompt").trim().optional(),
   ];
 }
