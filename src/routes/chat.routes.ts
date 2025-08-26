@@ -14,6 +14,11 @@ router.post(
   ChatValidator.parseCompletion,
   chatController.parseCompletion.bind(chatController)
 );
+router.post(
+  "/completion/image",
+  ChatValidator.imageCompletion,
+  chatController.imageCompletion.bind(chatController)
+);
 router.get(
   "/messages",
   ChatValidator.messages,

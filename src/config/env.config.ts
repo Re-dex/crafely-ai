@@ -9,6 +9,11 @@ export const config = {
     model: process.env.OPENAI_MODEL || "gpt-4o-mini",
     temperature: parseFloat(process.env.OPENAI_TEMPERATURE || "0.7"),
   },
+  replicate: {
+    apiToken: process.env.REPLICATE_API_TOKEN,
+    defaultModel:
+      process.env.REPLICATE_MODEL || "black-forest-labs/flux-schnell",
+  },
   upstashRedis: {
     url: process.env.UPSTASH_REDIS_URL,
     token: process.env.UPSTASH_REDIS_TOKEN,

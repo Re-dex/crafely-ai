@@ -14,4 +14,8 @@ export class ChatValidator {
     body("instructions").trim().optional(),
     body("prompt").trim().optional(),
   ];
+  static readonly imageCompletion: ValidationChain[] = [
+    body("prompt").trim().notEmpty().withMessage("prompt is required"),
+    body("model").trim().optional(),
+  ];
 }

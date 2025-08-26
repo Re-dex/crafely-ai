@@ -4,16 +4,19 @@ import { config } from "../config/env.config";
 import { BaseController } from "../app/BaseController";
 import { UsageService } from "../services/usage.service";
 import { UsageRecorderService } from "../services/usageRecorder.service";
+import { ReplicateService } from "../services/replicate.service";
 
 export class ChatController extends BaseController {
   private chatService: ChatService;
   private usageService: UsageService;
   private usageRecorder: UsageRecorderService;
+  private replicateService: ReplicateService;
   constructor() {
     super();
     this.chatService = new ChatService();
     this.usageService = new UsageService();
     this.usageRecorder = new UsageRecorderService(this.usageService);
+    this.replicateService = new ReplicateService();
   }
   async getMessages(req: Request, res: Response<any>) {
     this.handleRequest(req, res, async () => {
@@ -43,6 +46,17 @@ export class ChatController extends BaseController {
       const request: any = req.body;
       const response = await this.chatService.parseCompletion(request);
       return this.handleResponse("Completion parsed successfully", response);
+    });
+  }
+
+  async imageCompletion(req: Request, res: Response<any>) {
+    this.handleRequest(req, res, async () => {
+      const { prompt, model } = req.body as { prompt: string; model?: string };
+      const result = await this.replicateService.generateImage({
+        prompt,
+        model,
+      });
+      return this.handleResponse("Image generated successfully", result);
     });
   }
 }
