@@ -5,18 +5,22 @@ import { BaseController } from "../app/BaseController";
 import { UsageService } from "../services/usage.service";
 import { UsageRecorderService } from "../services/usageRecorder.service";
 import { ReplicateService } from "../services/replicate.service";
+import { OpenAiService } from "../services/openai.service";
+import fs from "fs";
 
 export class ChatController extends BaseController {
   private chatService: ChatService;
   private usageService: UsageService;
   private usageRecorder: UsageRecorderService;
   private replicateService: ReplicateService;
+  private openaiService: OpenAiService;
   constructor() {
     super();
     this.chatService = new ChatService();
     this.usageService = new UsageService();
     this.usageRecorder = new UsageRecorderService(this.usageService);
     this.replicateService = new ReplicateService();
+    this.openaiService = new OpenAiService();
   }
   async getMessages(req: Request, res: Response<any>) {
     this.handleRequest(req, res, async () => {
@@ -57,6 +61,42 @@ export class ChatController extends BaseController {
         model,
       });
       return this.handleResponse("Image generated successfully", result);
+    });
+  }
+
+  async uploadFile(req: any, res: Response<any>) {
+    this.handleRequest(req, res, async () => {
+      if (!req.file?.path) {
+        return this.handleResponse("No file uploaded", null, 400);
+      }
+
+      try {
+        const purpose =
+          (req.body?.purpose as "fine-tune" | "assistants" | "batch") ||
+          "fine-tune";
+        const expiresAfterSeconds = req.body?.expiresAfterSeconds
+          ? Number(req.body.expiresAfterSeconds)
+          : undefined;
+
+        const file = await this.openaiService.uploadFile({
+          filePath: req.file.path,
+          purpose,
+          expiresAfterSeconds,
+        });
+
+        // Cleanup temp file
+        if (req.file?.path && fs.existsSync(req.file.path)) {
+          fs.unlink(req.file.path, () => {});
+        }
+
+        return this.handleResponse("File uploaded successfully", file);
+      } catch (error: any) {
+        // Cleanup temp file on error as well
+        if (req.file?.path && fs.existsSync(req.file.path)) {
+          fs.unlink(req.file.path, () => {});
+        }
+        throw error;
+      }
     });
   }
 }

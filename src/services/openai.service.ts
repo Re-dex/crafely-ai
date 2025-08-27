@@ -1,6 +1,7 @@
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { PromptTemplate } from "@langchain/core/prompts";
 import { ChatOpenAI, OpenAIClient } from "@langchain/openai";
+import OpenAI from "openai";
+import fs from "fs";
 import { config } from "../config/env.config";
 import { z } from "zod";
 
@@ -9,12 +10,13 @@ export class OpenAiService {
   private tagExtractorPrompt: ChatPromptTemplate;
   private tagsSchema: any;
   private openai: any;
+  private sdk: OpenAI;
 
   constructor() {
-    // const openAIClient = wrapOpenAI(new OpenAI());
     this.openai = new OpenAIClient({
       apiKey: config.openai.apiKey,
     });
+    this.sdk = new OpenAI({ apiKey: config.openai.apiKey });
     this.model = new ChatOpenAI({
       openAIApiKey: config.openai.apiKey,
       modelName: config.openai.model,
@@ -87,5 +89,27 @@ export class OpenAiService {
         },
       ],
     });
+  }
+
+  async uploadFile(params: {
+    filePath: string;
+    purpose?: "fine-tune" | "assistants" | "batch";
+    expiresAfterSeconds?: number;
+  }) {
+    const { filePath, purpose = "fine-tune", expiresAfterSeconds } = params;
+
+    const expires_after =
+      typeof expiresAfterSeconds === "number"
+        ? { anchor: "created_at" as const, seconds: expiresAfterSeconds }
+        : undefined;
+
+    const file = await this.sdk.files.create({
+      file: fs.createReadStream(filePath),
+      purpose,
+      // @ts-ignore - expires_after is available in latest SDK; typings may lag
+      expires_after,
+    });
+
+    return file;
   }
 }
