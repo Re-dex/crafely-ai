@@ -19,13 +19,16 @@ const ResponseFormatter = z.object({
   slides: z
     .array(
       z.object({
+        order: z.number().describe("Order/position of slide in presentation"),
+        type: z.enum(["cover", "table_of_contents", "content", "conclusion"]).describe("Type of slide"),
+        layout: z.enum(["leftTextRightVisual", "centered", "rightTextLeftVisual", "topTextBottomVisual", "bottomTextTopVisual"]).describe("Layout of the slide"),
         title: z.string().describe("The title of the slide"),
-        content: z.string().describe("The content/body of the slide"),
-        recommendation: z
-          .string()
-          .describe(
-            "A recommendation for the slide, AI will provide recommendation how slide may be improved"
-          ),
+        outline: z.string().optional().describe(
+          "A complete and detailed outline of the slide, including all text, structure, and key points that should appear. This should provide enough information to fully generate the slide content without requiring extra context."
+        ),
+        imageDescription: z.string().optional().describe(
+          "A detailed description of the image for the slide. Include subject, style, background, colors, and any other important details so that the image can be generated accurately."
+        )
       })
     )
     .describe("The slides of the presentation, each with a title and content"),
