@@ -31,6 +31,12 @@ router.post(
   ChatValidator.parseCompletion,
   chatController.parseCompletion.bind(chatController)
 );
+// New route for creating a presentation
+router.post(
+  "/completion/parse/presentation",
+  ChatValidator.parsePresentation,
+  chatController.parsePresentation.bind(chatController)
+);
 router.post(
   "/completion/image",
   ChatValidator.imageCompletion,

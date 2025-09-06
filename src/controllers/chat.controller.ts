@@ -53,6 +53,15 @@ export class ChatController extends BaseController {
     });
   }
 
+  // New controller method to create and return a presentation
+  async parsePresentation(req: Request, res: Response<any>) {
+    this.handleRequest(req, res, async () => {
+      const request: any = req.body;
+      const response = await this.chatService.parsePresentation(request);
+      return this.handleResponse("Presentation created successfully", response);
+    });
+  }
+
   async imageCompletion(req: Request, res: Response<any>) {
     this.handleRequest(req, res, async () => {
       const { prompt, model } = req.body as { prompt: string; model?: string };

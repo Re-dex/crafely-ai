@@ -20,18 +20,67 @@ const ResponseFormatter = z.object({
     .array(
       z.object({
         order: z.number().describe("Order/position of slide in presentation"),
-        type: z.enum(["cover", "table_of_contents", "content", "conclusion"]).describe("Type of slide"),
-        layout: z.enum(["leftTextRightVisual", "centered", "rightTextLeftVisual", "topTextBottomVisual", "bottomTextTopVisual"]).describe("Layout of the slide"),
+        type: z
+          .enum(["cover", "table_of_contents", "content", "conclusion"]).describe(
+            "Type of slide"
+          ),
+        layout: z
+          .enum([
+            "leftTextRightVisual",
+            "centered",
+            "rightTextLeftVisual",
+            "topTextBottomVisual",
+            "bottomTextTopVisual",
+          ])
+          .describe("Layout of the slide"),
         title: z.string().describe("The title of the slide"),
-        outline: z.string().optional().describe(
-          "A complete and detailed outline of the slide, including all text, structure, and key points that should appear. This should provide enough information to fully generate the slide content without requiring extra context."
-        ),
-        imageDescription: z.string().optional().describe(
-          "A detailed description of the image for the slide. Include subject, style, background, colors, and any other important details so that the image can be generated accurately."
-        )
+        outline: z
+          .string()
+          .optional()
+          .describe(
+            "A complete and detailed outline of the slide, including all text, structure, and key points that should appear. This should provide enough information to fully generate the slide content without requiring extra context."
+          ),
+        imageDescription: z
+          .string()
+          .optional()
+          .describe(
+            "A detailed description of the image for the slide. Include subject, style, background, colors, and any other important details so that the image can be generated accurately."
+          ),
       })
     )
     .describe("The slides of the presentation, each with a title and content"),
+});
+
+// Formatter for the new presentation endpoint
+const PresentationResponseFormatter = z.object({
+  title: z
+    .string()
+    .max(255)
+    .describe("A concise title of the presentation (max 255 characters)"),
+  description: z
+    .string()
+    .describe(
+      "A very elaborated description of the presentation, comprehensive and detailed"
+    ),
+  globalStyle: z
+    .object({
+      accentColor: z
+        .string()
+        .describe("Accent color for highlights, e.g., #FF5733 or 'teal'"),
+      backgroundColor: z
+        .string()
+        .describe("Background color for slides, e.g., #FFFFFF or 'black'"),
+      backgroundImage: z
+        .string()
+        .describe("Background image reference or description (URL or text)"),
+      fontFamily: z
+        .string()
+        .describe("Font family to use across slides, e.g., 'Inter'"),
+    })
+    .strict()
+    .describe(
+      "Global style for the presentation. Must include all of: accentColor, backgroundColor, backgroundImage, fontFamily"
+    ),
 });
 
 // Add type definition for the response
@@ -152,6 +201,29 @@ export class ChatService {
       return await modelWithStructure.invoke(messages);
     } catch (error) {
       console.error("Error in parseCompletion:", error);
+      throw error;
+    }
+  }
+
+  // New method to create and return a presentation structure
+  async parsePresentation(req: any) {
+    try {
+      let messages: any[] = [];
+      const prompt = convertToLangChainMessages(req.prompt);
+      messages = [...messages, ...prompt];
+
+      if (req.instructions) {
+        const system_message = new SystemMessage(req.instructions);
+        messages.push(system_message);
+      }
+
+      const modelWithStructure = this.model.withStructuredOutput(
+        PresentationResponseFormatter as any
+      ) as ChatOpenAI;
+
+      return await modelWithStructure.invoke(messages);
+    } catch (error) {
+      console.error("Error in parsePresentation:", error);
       throw error;
     }
   }
