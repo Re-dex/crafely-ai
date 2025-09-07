@@ -36,13 +36,11 @@ const ResponseFormatter = z.object({
         title: z.string().describe("The title of the slide"),
         outline: z
           .string()
-          .optional()
           .describe(
             "A complete and detailed outline of the slide, including all text, structure, and key points that should appear. This should provide enough information to fully generate the slide content without requiring extra context."
           ),
         imageDescription: z
           .string()
-          .optional()
           .describe(
             "A detailed description of the image for the slide. Include subject, style, background, colors, and any other important details so that the image can be generated accurately."
           ),
