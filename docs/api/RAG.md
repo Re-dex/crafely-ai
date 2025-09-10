@@ -13,6 +13,8 @@ Simple Retrieval-Augmented Generation utilities for uploading PDFs, storing chun
 - POST `/api/v1/rag/upload` — Upload a PDF, chunk, embed, and store.
 - POST `/api/v1/rag/query` — Query and retrieve top similar chunks.
   - Optional scope: `threadId` to search the current conversation first, then fallback to user scope.
+- POST `/api/v1/rag/chat` — Chat with server-orchestrated retrieval via tools and citations.
+  - Body accepts optional `threadId`, but scoping is enforced server-side (tool cannot change it).
 
 ### Upload PDF
 
@@ -81,6 +83,63 @@ Response (200):
 }
 ```
 
+### Chat with Tools
+
+- Body: `{ "message": string, "threadId"?: string, "model"?: string, "topK"?: number }`
+- Behavior: The server lets the model call `fileSearch`, resolves it via `RagService.query` (thread-first, fallback to user), then resumes the model to produce an answer with citations and previews.
+- Constraints: `message` required, `topK` bounded to 1..10. `threadId` is validated to belong to the API key’s user and is not accepted from tool args.
+
+Example (curl):
+
+```bash
+curl -X POST \
+  'http://localhost:4000/api/v1/rag/chat' \
+  -H 'Authorization: Bearer <API_KEY>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "message": "Summarize the main points of the uploaded contract.",
+    "threadId": "thrd_123",
+    "topK": 5,
+    "model": "gpt-4o-mini"
+  }'
+```
+
+Response (200):
+
+```json
+{
+  "success": true,
+  "answer": "The contract establishes... (doc: doc_abc#3) ...",
+  "citations": ["doc_abc#3", "doc_def#1"],
+  "previews": [
+    {
+      "documentId": "doc_abc",
+      "index": 3,
+      "preview": "...first 200 chars...",
+      "similarity": 0.86
+    },
+    {
+      "documentId": "doc_def",
+      "index": 1,
+      "preview": "...",
+      "similarity": 0.81
+    }
+  ],
+  "noSources": false,
+  "toolCalls": [
+    {
+      "name": "fileSearch",
+      "arguments": "{\"query\":\"Summarize...\",\"topK\":5}"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 123,
+    "completion_tokens": 210,
+    "total_tokens": 333
+  }
+}
+```
+
 ### JS (ES6) Usage
 
 ```js
@@ -110,6 +169,19 @@ export async function ragQuery(query, topK = 5) {
     body: JSON.stringify({ query, topK }),
   });
   if (!res.ok) throw new Error("Query failed");
+  return res.json();
+}
+
+export async function ragChat(message, { threadId, topK = 5, model } = {}) {
+  const res = await fetch(`${BASE}/chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: API_KEY,
+    },
+    body: JSON.stringify({ message, threadId, topK, model }),
+  });
+  if (!res.ok) throw new Error("Chat failed");
   return res.json();
 }
 ```
@@ -143,6 +215,24 @@ async function ragQuery(query: string, topK = 5) {
     body: JSON.stringify({ query, topK }),
   });
   if (!res.ok) throw new Error('Query failed');
+  return await res.json();
+}
+
+async function ragChat(message: string, opts?: { threadId?: string; topK?: number; model?: string }) {
+  const res = await fetch(`${BASE}/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: API_KEY,
+    },
+    body: JSON.stringify({
+      message,
+      threadId: opts?.threadId,
+      topK: opts?.topK ?? 5,
+      model: opts?.model,
+    }),
+  });
+  if (!res.ok) throw new Error('Chat failed');
   return await res.json();
 }
 </script>

@@ -32,5 +32,6 @@ const router = Router();
 
 router.post("/upload", upload.single("file"), ragController.upload);
 router.post("/query", ragController.query);
+router.post("/chat", ragController.chat);
 
 export default router;
