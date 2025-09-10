@@ -121,3 +121,33 @@ model Usage {
   @@index([userId, createdAt])
   @@index([provider, model])
 }
+
+model Document {
+  id          String   @id @default(dbgenerated("concat('doc_', gen_random_uuid())")) @db.VarChar(255)
+  userId      String
+  title       String?
+  filename    String?
+  mimeType    String? @default("application/pdf")
+  sizeBytes   Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  chunks      DocumentChunk[]
+
+  @@index([userId, createdAt])
+}
+
+model DocumentChunk {
+  id          String   @id @default(dbgenerated("concat('dchk_', gen_random_uuid())")) @db.VarChar(255)
+  documentId  String
+  userId      String
+  index       Int
+  content     String   @db.Text
+  embedding   Float[]
+  createdAt   DateTime @default(now())
+
+  document    Document @relation(fields: [documentId], references: [id])
+
+  @@index([documentId, index])
+  @@index([userId, createdAt])
+}
