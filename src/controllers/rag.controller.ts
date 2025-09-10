@@ -23,6 +23,7 @@ export class RagController {
 
       const doc = await this.rag.createDocument({
         userId,
+        threadId: req.body?.threadId || req.query?.threadId,
         filePath: file.path,
         filename: file.originalname,
         mimeType: file.mimetype,
@@ -44,13 +45,13 @@ export class RagController {
         res.status(401).json({ success: false, message: "Unauthorized" });
         return;
       }
-      const { query, topK } = req.body || {};
+      const { query, topK, threadId } = req.body || {};
       if (!query) {
         res.status(400).json({ success: false, message: "query is required" });
         return;
       }
 
-      const results = await this.rag.query({ userId, query, topK });
+      const results = await this.rag.query({ userId, threadId, query, topK });
       res.status(200).json({ success: true, results });
     } catch (error: any) {
       res

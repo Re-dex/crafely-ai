@@ -5,6 +5,7 @@ import fs from "fs";
 
 type CreateDocumentInput = {
   userId: string;
+  threadId?: string;
   filePath: string;
   filename?: string;
   mimeType?: string;
@@ -15,6 +16,7 @@ type CreateDocumentInput = {
 
 type QueryInput = {
   userId: string;
+  threadId?: string;
   query: string;
   topK?: number;
 };
@@ -53,7 +55,7 @@ export class RagService {
   }
 
   async createDocument(input: CreateDocumentInput) {
-    const { userId, filePath, filename, mimeType, title } = input;
+    const { userId, threadId, filePath, filename, mimeType, title } = input;
     const chunkSize = input.chunkSize ?? 300;
     const chunkOverlap = input.chunkOverlap ?? 50;
 
@@ -67,6 +69,7 @@ export class RagService {
     const document = await prisma.document.create({
       data: {
         userId,
+        threadId,
         title: title ?? filename ?? "Untitled",
         filename,
         mimeType: mimeType ?? "application/pdf",
@@ -101,21 +104,48 @@ export class RagService {
   }
 
   async query(input: QueryInput) {
-    const { userId, query, topK = 5 } = input;
+    const { userId, threadId, query, topK = 5 } = input;
     const queryEmbedding = await this.embedQuery(query);
 
-    const candidates = await prisma.documentChunk.findMany({
-      where: { userId },
-      select: {
-        id: true,
-        documentId: true,
-        index: true,
-        content: true,
-        embedding: true,
-      },
-      take: Math.max(topK * 20, 100),
-      orderBy: { createdAt: "desc" },
-    });
+    let candidates: any[] = [];
+    if (threadId) {
+      const threadDocs = await prisma.document.findMany({
+        where: { userId, threadId },
+        select: { id: true },
+      });
+      const threadDocIds = threadDocs.map((d) => d.id);
+      if (threadDocIds.length > 0) {
+        candidates = await prisma.documentChunk.findMany({
+          where: { userId, documentId: { in: threadDocIds } },
+          select: {
+            id: true,
+            documentId: true,
+            index: true,
+            content: true,
+            embedding: true,
+          },
+          take: Math.max(topK * 20, 100),
+          orderBy: { createdAt: "desc" },
+        });
+      }
+    }
+
+    if (candidates.length < topK) {
+      const userScope = await prisma.documentChunk.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          documentId: true,
+          index: true,
+          content: true,
+          embedding: true,
+        },
+        take: Math.max(topK * 20, 100),
+        orderBy: { createdAt: "desc" },
+      });
+      const seen = new Set(candidates.map((c) => c.id));
+      for (const c of userScope) if (!seen.has(c.id)) candidates.push(c);
+    }
 
     const similarity = (a: number[], b: number[]) => {
       let dot = 0;

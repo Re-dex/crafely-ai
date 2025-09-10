@@ -125,6 +125,7 @@ model Usage {
 model Document {
   id          String   @id @default(dbgenerated("concat('doc_', gen_random_uuid())")) @db.VarChar(255)
   userId      String
+  threadId    String?
   title       String?
   filename    String?
   mimeType    String? @default("application/pdf")
@@ -135,6 +136,7 @@ model Document {
   chunks      DocumentChunk[]
 
   @@index([userId, createdAt])
+  @@index([threadId, createdAt])
 }
 
 model DocumentChunk {

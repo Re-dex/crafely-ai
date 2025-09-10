@@ -12,6 +12,7 @@ Simple Retrieval-Augmented Generation utilities for uploading PDFs, storing chun
 
 - POST `/api/v1/rag/upload` — Upload a PDF, chunk, embed, and store.
 - POST `/api/v1/rag/query` — Query and retrieve top similar chunks.
+  - Optional scope: `threadId` to search the current conversation first, then fallback to user scope.
 
 ### Upload PDF
 
@@ -25,7 +26,8 @@ Example (curl):
 curl -X POST \
   'http://localhost:4000/api/v1/rag/upload' \
   -H 'Authorization: Bearer <API_KEY>' \
-  -F 'file=@/absolute/path/to/document.pdf'
+  -F 'file=@/absolute/path/to/document.pdf' \
+  -F 'threadId=thrd_123'
 ```
 
 Response (201):
@@ -58,7 +60,7 @@ curl -X POST \
   'http://localhost:4000/api/v1/rag/query' \
   -H 'Authorization: Bearer <API_KEY>' \
   -H 'Content-Type: application/json' \
-  -d '{"query":"what does the contract say about termination?","topK":5}'
+  -d '{"query":"what does the contract say about termination?","topK":5, "threadId":"thrd_123"}'
 ```
 
 Response (200):
@@ -85,9 +87,10 @@ Response (200):
 const API_KEY = "Bearer <API_KEY>";
 const BASE = "http://localhost:4000/api/v1/rag";
 
-export async function uploadPdf(file) {
+export async function uploadPdf(file, threadId) {
   const form = new FormData();
   form.append("file", file);
+  if (threadId) form.append("threadId", threadId);
   const res = await fetch(`${BASE}/upload`, {
     method: "POST",
     headers: { Authorization: API_KEY },
