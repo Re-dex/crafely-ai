@@ -1,6 +1,6 @@
 import Replicate from "replicate";
 const replicate = new Replicate();
-
+// This is a test commit
 console.log("Running the model...");
 const [output] = await replicate.run("black-forest-labs/flux-schnell", {
   input: {
