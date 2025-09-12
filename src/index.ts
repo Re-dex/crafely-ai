@@ -78,8 +78,8 @@ app.get("/health/db", async (req, res) => {
   }
 });
 
-// 404 handler for unmatched routes
-app.use("*", (req, res) => {
+// 404 handler for unmatched routes (Express 5: remove "*" pattern)
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: "Route not found",
