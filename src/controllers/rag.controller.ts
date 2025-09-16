@@ -4,6 +4,7 @@ import { prisma } from "../database/prisma";
 import { OpenAiService } from "../services/openai.service";
 import { config } from "../config/env.config";
 import { UsageRecorderService } from "../services/usageRecorder.service";
+import fs from "fs";
 
 export class RagController {
   private rag: RagService;
@@ -13,7 +14,33 @@ export class RagController {
     this.usageRecorder = new UsageRecorderService();
   }
 
+  /**
+   * Safely deletes a temporary file
+   * @param filePath - Path to the file to delete
+   * @param context - Context for logging (e.g., "success", "error")
+   */
+  private cleanupTempFile(
+    filePath: string | null,
+    context: string = "cleanup"
+  ): void {
+    if (!filePath) return;
+
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`✅ Cleaned up temporary file (${context}): ${filePath}`);
+      }
+    } catch (cleanupError) {
+      console.warn(
+        `⚠️ Failed to clean up temporary file ${filePath} (${context}):`,
+        cleanupError
+      );
+    }
+  }
+
   upload = async (req: any, res: Response) => {
+    let tempFilePath: string | null = null;
+
     try {
       const userId = req?.user?.id;
       if (!userId) {
@@ -27,6 +54,9 @@ export class RagController {
         return;
       }
 
+      // Store the temp file path for cleanup
+      tempFilePath = file.path;
+
       const doc = await this.rag.createDocument({
         userId,
         threadId: req.body?.threadId || req.query?.threadId,
@@ -36,8 +66,14 @@ export class RagController {
         title: file.originalname,
       });
 
+      // Clean up the temporary file after successful processing
+      this.cleanupTempFile(tempFilePath, "success");
+
       res.status(201).json({ success: true, document: doc });
     } catch (error: any) {
+      // Clean up the temporary file even if processing failed
+      this.cleanupTempFile(tempFilePath, "error");
+
       res
         .status(500)
         .json({ success: false, message: error?.message || "Upload failed" });
@@ -96,9 +132,21 @@ export class RagController {
           where: { id: threadId, userId },
         });
         if (!thread) {
-          res
-            .status(403)
-            .json({ success: false, message: "Invalid threadId for user" });
+          // Debug: Let's see what threads exist for this user
+          const userThreads = await prisma.thread.findMany({
+            where: { userId },
+            select: { id: true, name: true, createdAt: true },
+          });
+
+          res.status(403).json({
+            success: false,
+            message: "Invalid threadId for user",
+            debug: {
+              requestedThreadId: threadId,
+              userId: userId,
+              availableThreads: userThreads,
+            },
+          });
           return;
         }
       }

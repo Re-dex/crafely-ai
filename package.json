@@ -11,7 +11,8 @@
     "vercel-build": "echo hello",
     "build:css": "postcss src/assets/css/style.css -o public/css/style.css",
     "watch:css": "postcss src/assets/css/style.css -o public/css/style.css --watch",
-    "prisma:seed": "node --max-old-space-size=4096 ./node_modules/.bin/ts-node prisma/seed.ts"
+    "prisma:seed": "node --max-old-space-size=4096 ./node_modules/.bin/ts-node prisma/seed.ts",
+    "cleanup:temp": "node scripts/cleanup-temp.js"
   },
   "engines": {
     "node": "22"
