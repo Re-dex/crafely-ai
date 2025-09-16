@@ -21,7 +21,7 @@ export class ChatValidator {
     body("prompt").optional(),
   ];
   static readonly imageCompletion: ValidationChain[] = [
-    body("input").withMessage("Input is required"),
+    body("input").isObject().withMessage("input must be an object"),
     body("model").trim().optional(),
   ];
 }
