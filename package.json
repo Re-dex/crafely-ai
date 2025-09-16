@@ -13,6 +13,9 @@
     "watch:css": "postcss src/assets/css/style.css -o public/css/style.css --watch",
     "prisma:seed": "node --max-old-space-size=4096 ./node_modules/.bin/ts-node prisma/seed.ts"
   },
+  "engines": {
+    "node": "22"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

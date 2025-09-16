@@ -64,9 +64,9 @@ export class ChatController extends BaseController {
 
   async imageCompletion(req: Request, res: Response<any>) {
     this.handleRequest(req, res, async () => {
-      const { prompt, model } = req.body as { prompt: string; model?: string };
+      const { input, model } = req.body as { input: object; model?: string };
       const result = await this.replicateService.generateImage({
-        prompt,
+        input,
         model,
       });
       return this.handleResponse("Image generated successfully", result);
