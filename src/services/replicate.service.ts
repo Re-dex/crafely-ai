@@ -9,7 +9,7 @@ type ReplicateModelIdentifier =
   | `${string}/${string}:${string}`;
 
 interface GenerateImageParams {
-  prompt: string;
+  input: object;
   model?: string;
 }
 
@@ -51,15 +51,13 @@ export class ReplicateService {
   }
 
   async generateImage({
-    prompt,
+    input,
     model,
   }: GenerateImageParams): Promise<{ images: string | string[] }> {
     const modelId = (model ||
       config.replicate.defaultModel) as ReplicateModelIdentifier;
-
-    const enhancedPrompt = await this.enhancePrompt(prompt);
     const result: any = await this.client.run(modelId, {
-      input: { prompt: enhancedPrompt },
+      input,
     });
 
     const images = await normalizeReplicateOutputs(result);
