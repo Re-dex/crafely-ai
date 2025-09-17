@@ -12,6 +12,7 @@ import { config } from "../config/env.config";
 import { handleStream } from "../utils";
 import { MemoryService } from "./memory.service";
 import { toolWrapper } from "../tools/wrapper.tools";
+import { FileSearchToolService } from "./fileSearchTool.service";
 import { z } from "zod";
 
 const ResponseFormatter = z.object({
@@ -90,6 +91,7 @@ interface ChatRequest {
   tools: [];
   tools_schema?: any[];
   signature: any;
+  userId?: string; // Required for fileSearch tool
 }
 
 interface StreamChunk {
@@ -102,6 +104,7 @@ export class ChatService {
   private static readonly MAX_TOKENS = 1000;
   private model: ChatOpenAI;
   private memoryService: MemoryService;
+  private fileSearchToolService: FileSearchToolService;
 
   constructor() {
     this.model = new ChatOpenAI({
@@ -110,6 +113,7 @@ export class ChatService {
       temperature: config.openai.temperature,
     });
     this.memoryService = new MemoryService();
+    this.fileSearchToolService = new FileSearchToolService();
   }
 
   private processToolOutput = (tool_outputs = []) => {
@@ -130,7 +134,14 @@ export class ChatService {
   async streamChat(req: ChatRequest, res: any) {
     try {
       let previous_messages = [];
-      const llmWithTools = this.model.bindTools(toolWrapper(req.tools_schema));
+
+      // Merge fileSearch tool with client tools
+      const allTools = [
+        this.fileSearchToolService.getToolSchema(),
+        ...toolWrapper(req.tools_schema),
+      ];
+
+      const llmWithTools = this.model.bindTools(allTools);
       const trimmer = trimMessages({
         maxTokens: ChatService.MAX_TOKENS,
         strategy: "last",
@@ -148,10 +159,17 @@ export class ChatService {
         );
         previous_messages.push(...this.processToolOutput(req?.tools));
       } else {
-        if (req.instructions) {
-          const system_message = new SystemMessage(req.instructions);
-          previous_messages.push(system_message);
-        }
+        // Add fileSearch tool instructions to system prompt
+        const fileSearchInstructions = this.fileSearchToolService
+          .getSystemPromptInstructions()
+          .join("\n");
+        const combinedInstructions = req.instructions
+          ? `${req.instructions}\n\n${fileSearchInstructions}`
+          : fileSearchInstructions;
+
+        const system_message = new SystemMessage(combinedInstructions);
+        previous_messages.push(system_message);
+
         const input = convertToLangChainMessages(req.input);
         previous_messages = [...previous_messages, ...input];
       }
