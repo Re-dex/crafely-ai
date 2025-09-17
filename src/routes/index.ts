@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import chatRoutes from "./chat.routes";
 import productRoute from "./product.routes";
-import ragRoutes from "./rag.routes";
+import fileRoutes from "./file.routes";
 import apiKeyRoute from "./apiKey.routes";
 import threadRoutes from "./thread.routes";
 import packageRoutes from "./package.routes";
@@ -38,7 +38,7 @@ v1Router.use("/admin", adminRouter); // /v1/admin/*
  */
 v1Router.use("/chat", apiKeyMiddleware, chatRoutes);
 v1Router.use("/product", apiKeyMiddleware, productRoute);
-v1Router.use("/rag", apiKeyMiddleware, ragRoutes);
+v1Router.use("/file", apiKeyMiddleware, fileRoutes);
 v1Router.use("/thread", apiKeyMiddleware, threadRoutes);
 v1Router.use("/usage", apiKeyMiddleware, usageRoutes);
 

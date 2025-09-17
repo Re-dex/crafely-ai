@@ -4,13 +4,16 @@ import { prisma } from "../database/prisma";
 import { OpenAiService } from "../services/openai.service";
 import { config } from "../config/env.config";
 import { UsageRecorderService } from "../services/usageRecorder.service";
+import { BaseController } from "../app/BaseController";
 import fs from "fs";
 
-export class RagController {
-  private rag: RagService;
+export class FileController extends BaseController {
+  private ragService: RagService;
   private usageRecorder: UsageRecorderService;
+
   constructor(ragService = new RagService()) {
-    this.rag = ragService;
+    super();
+    this.ragService = ragService;
     this.usageRecorder = new UsageRecorderService();
   }
 
@@ -38,76 +41,85 @@ export class RagController {
     }
   }
 
+  /**
+   * Upload a file for RAG processing
+   * POST /file/upload
+   */
   upload = async (req: any, res: Response) => {
-    let tempFilePath: string | null = null;
+    this.handleRequest(req, res, async () => {
+      let tempFilePath: string | null = null;
 
-    try {
-      const userId = req?.user?.id;
-      if (!userId) {
-        res.status(401).json({ success: false, message: "Unauthorized" });
-        return;
+      try {
+        const userId = req?.user?.id;
+        if (!userId) {
+          return this.handleResponse("Unauthorized", null, 401);
+        }
+
+        const file = req.file as Express.Multer.File;
+        if (!file) {
+          return this.handleResponse("No file uploaded", null, 400);
+        }
+
+        // Store the temp file path for cleanup
+        tempFilePath = file.path;
+
+        const doc = await this.ragService.createDocument({
+          userId,
+          threadId: req.body?.threadId || req.query?.threadId,
+          filePath: file.path,
+          filename: file.originalname,
+          mimeType: file.mimetype,
+          title: file.originalname,
+        });
+
+        // Clean up the temporary file after successful processing
+        this.cleanupTempFile(tempFilePath, "success");
+
+        return this.handleResponse("File uploaded successfully", doc, 201);
+      } catch (error: any) {
+        // Clean up the temporary file even if processing failed
+        this.cleanupTempFile(tempFilePath, "error");
+        throw error;
       }
-
-      const file = req.file as Express.Multer.File;
-      if (!file) {
-        res.status(400).json({ success: false, message: "No file uploaded" });
-        return;
-      }
-
-      // Store the temp file path for cleanup
-      tempFilePath = file.path;
-
-      const doc = await this.rag.createDocument({
-        userId,
-        threadId: req.body?.threadId || req.query?.threadId,
-        filePath: file.path,
-        filename: file.originalname,
-        mimeType: file.mimetype,
-        title: file.originalname,
-      });
-
-      // Clean up the temporary file after successful processing
-      this.cleanupTempFile(tempFilePath, "success");
-
-      res.status(201).json({ success: true, document: doc });
-    } catch (error: any) {
-      // Clean up the temporary file even if processing failed
-      this.cleanupTempFile(tempFilePath, "error");
-
-      res
-        .status(500)
-        .json({ success: false, message: error?.message || "Upload failed" });
-    }
+    });
   };
 
+  /**
+   * Query documents using RAG
+   * POST /file/query
+   */
   query = async (req: any, res: Response) => {
-    try {
+    this.handleRequest(req, res, async () => {
       const userId = req?.user?.id;
       if (!userId) {
-        res.status(401).json({ success: false, message: "Unauthorized" });
-        return;
+        return this.handleResponse("Unauthorized", null, 401);
       }
+
       const { query, topK, threadId } = req.body || {};
       if (!query) {
-        res.status(400).json({ success: false, message: "query is required" });
-        return;
+        return this.handleResponse("query is required", null, 400);
       }
 
-      const results = await this.rag.query({ userId, threadId, query, topK });
-      res.status(200).json({ success: true, results });
-    } catch (error: any) {
-      res
-        .status(500)
-        .json({ success: false, message: error?.message || "Query failed" });
-    }
+      const results = await this.ragService.query({
+        userId,
+        threadId,
+        query,
+        topK,
+      });
+
+      return this.handleResponse("Query executed successfully", results);
+    });
   };
 
+  /**
+   * Chat with documents using RAG
+   * POST /file/chat
+   */
   chat = async (req: any, res: Response) => {
-    try {
+    this.handleRequest(req, res, async () => {
       const userId = req?.user?.id;
       if (!userId) {
-        res.status(401).json({ success: false, message: "Unauthorized" });
-        return;
+        return this.handleResponse("Unauthorized", null, 401);
       }
 
       const message: string | undefined = req.body?.message;
@@ -117,10 +129,7 @@ export class RagController {
       const requestedTopK: number | undefined = req.body?.topK;
 
       if (!message || typeof message !== "string" || !message.trim()) {
-        res
-          .status(400)
-          .json({ success: false, message: "message is required" });
-        return;
+        return this.handleResponse("message is required", null, 400);
       }
 
       const topK = Math.min(Math.max(Number(requestedTopK || 5), 1), 10);
@@ -138,16 +147,15 @@ export class RagController {
             select: { id: true, name: true, createdAt: true },
           });
 
-          res.status(403).json({
-            success: false,
-            message: "Invalid threadId for user",
-            debug: {
+          return this.handleResponse(
+            "Invalid threadId for user",
+            {
               requestedThreadId: threadId,
               userId: userId,
               availableThreads: userThreads,
             },
-          });
-          return;
+            403
+          );
         }
       }
 
@@ -220,7 +228,7 @@ export class RagController {
             const k = Math.min(Math.max(Number(args.topK || topK), 1), 10);
             const effectiveThreadId: string | undefined = threadId;
 
-            retrievalResults = await this.rag.query({
+            retrievalResults = await this.ragService.query({
               userId,
               threadId: effectiveThreadId,
               query: q,
@@ -289,8 +297,7 @@ export class RagController {
         }
       );
 
-      res.status(200).json({
-        success: true,
+      return this.handleResponse("Chat completed successfully", {
         answer,
         citations,
         previews,
@@ -305,12 +312,8 @@ export class RagController {
           total_tokens: usageMeta.total_tokens || 0,
         },
       });
-    } catch (error: any) {
-      res
-        .status(500)
-        .json({ success: false, message: error?.message || "Chat failed" });
-    }
+    });
   };
 }
 
-export default new RagController();
+export default new FileController();

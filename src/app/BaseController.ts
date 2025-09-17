@@ -84,7 +84,13 @@ export abstract class BaseController {
 
       // Normalize and send response
       const { code, data, message } = this.normalizeResponse<T>(result);
-      const response = ApiResponse.success(message, data);
+
+      // Use error response for non-2xx status codes
+      const response =
+        code >= 200 && code < 300
+          ? ApiResponse.success(message, data)
+          : ApiResponse.error(message, data);
+
       res.status(code).json(response);
     } catch (error) {
       // Handle errors and send error response

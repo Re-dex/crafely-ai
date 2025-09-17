@@ -2,7 +2,8 @@ import { Router } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import ragController from "../controllers/rag.controller";
+import fileController from "../controllers/file.controller";
+import { FileValidator } from "../validator/file.validator";
 
 const uploadDir = path.resolve(process.cwd(), "tmp", "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -30,8 +31,18 @@ const upload = multer({
 
 const router = Router();
 
-router.post("/upload", upload.single("file"), ragController.upload);
-router.post("/query", ragController.query);
-router.post("/chat", ragController.chat);
+// File upload endpoint
+router.post(
+  "/upload",
+  upload.single("file"),
+  FileValidator.upload,
+  fileController.upload
+);
+
+// File query endpoint
+router.post("/query", FileValidator.query, fileController.query);
+
+// File chat endpoint
+router.post("/chat", FileValidator.chat, fileController.chat);
 
 export default router;
