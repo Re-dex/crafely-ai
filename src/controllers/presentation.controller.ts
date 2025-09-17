@@ -25,18 +25,24 @@ export class PresentationController extends BaseController {
    * Handles streaming chat responses for presentation-related queries
    */
   async completion(req: any, res: Response<any>) {
-    try {
-      const response = await this.chatService.streamChat(req.body, res);
-      await this.usageRecorder.recordFromRequest(req, response.usage_metadata, {
-        model: config.openai.model,
-      });
-    } catch (error: any) {
-      console.error("Presentation streaming error:", error);
-      res.status(500).json({
-        message: "Presentation streaming error",
-        error: error.message || error,
-      });
-    }
+    this.handleRequest(req, res, async () => {
+      try {
+        const response = await this.chatService.streamChat(req.body, res);
+        await this.usageRecorder.recordFromRequest(
+          req,
+          response.usage_metadata,
+          {
+            model: config.openai.model,
+          }
+        );
+      } catch (error: any) {
+        console.error("Presentation streaming error:", error);
+        res.status(500).json({
+          message: "Presentation streaming error",
+          error: error.message || error,
+        });
+      }
+    });
   }
 
   /**
@@ -83,18 +89,24 @@ export class PresentationController extends BaseController {
    * Alias for completion with presentation-specific error handling
    */
   async chat(req: any, res: Response<any>) {
-    try {
-      const response = await this.chatService.streamChat(req.body, res);
-      await this.usageRecorder.recordFromRequest(req, response.usage_metadata, {
-        model: config.openai.model,
-      });
-    } catch (error: any) {
-      console.error("Presentation chat error:", error);
-      res.status(500).json({
-        message: "Presentation chat error",
-        error: error.message || error,
-      });
-    }
+    this.handleRequest(req, res, async () => {
+      try {
+        const response = await this.chatService.streamChat(req.body, res);
+        await this.usageRecorder.recordFromRequest(
+          req,
+          response.usage_metadata,
+          {
+            model: config.openai.model,
+          }
+        );
+      } catch (error: any) {
+        console.error("Presentation chat error:", error);
+        res.status(500).json({
+          message: "Presentation chat error",
+          error: error.message || error,
+        });
+      }
+    });
   }
 
   /**

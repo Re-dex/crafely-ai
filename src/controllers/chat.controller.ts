@@ -27,18 +27,24 @@ export class ChatController extends BaseController {
   }
 
   async completion(req: any, res: Response<any>) {
-    try {
-      const response = await this.chatService.streamChat(req.body, res);
-      await this.usageRecorder.recordFromRequest(req, response.usage_metadata, {
-        model: config.openai.model,
-      });
-    } catch (error: any) {
-      console.error("Streaming error:", error);
-      res.status(500).json({
-        message: "Streaming error",
-        error: error.message || error,
-      });
-    }
+    this.handleRequest(req, res, async () => {
+      try {
+        const response = await this.chatService.streamChat(req.body, res);
+        await this.usageRecorder.recordFromRequest(
+          req,
+          response.usage_metadata,
+          {
+            model: config.openai.model,
+          }
+        );
+      } catch (error: any) {
+        console.error("Streaming error:", error);
+        res.status(500).json({
+          message: "Streaming error",
+          error: error.message || error,
+        });
+      }
+    });
   }
 
   async parseCompletion(req: Request, res: Response<any>) {

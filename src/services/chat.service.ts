@@ -21,9 +21,8 @@ const ResponseFormatter = z.object({
       z.object({
         order: z.number().describe("Order/position of slide in presentation"),
         type: z
-          .enum(["cover", "table_of_contents", "content", "conclusion"]).describe(
-            "Type of slide"
-          ),
+          .enum(["cover", "table_of_contents", "content", "conclusion"])
+          .describe("Type of slide"),
         layout: z
           .enum([
             "leftTextRightVisual",
@@ -85,8 +84,8 @@ const PresentationResponseFormatter = z.object({
 type ResponseFormatterType = z.infer<typeof ResponseFormatter>;
 
 interface ChatRequest {
-  sessionId: string;
-  prompt: string | any[];
+  threadId: string;
+  input: string | any[];
   instructions: string;
   tools: [];
   tools_schema?: any[];
@@ -138,8 +137,8 @@ export class ChatService {
         tokenCounter: this.model,
         includeSystem: true,
       });
-      if (req.sessionId) {
-        previous_messages = await this.memoryService.getContext(req.sessionId);
+      if (req.threadId) {
+        previous_messages = await this.memoryService.getContext(req.threadId);
       }
 
       if (req.tools?.length > 0) {
@@ -153,8 +152,8 @@ export class ChatService {
           const system_message = new SystemMessage(req.instructions);
           previous_messages.push(system_message);
         }
-        const prompt = convertToLangChainMessages(req.prompt);
-        previous_messages = [...previous_messages, ...prompt];
+        const input = convertToLangChainMessages(req.input);
+        previous_messages = [...previous_messages, ...input];
       }
       const trimmedHistory = await trimmer.invoke(previous_messages);
       const stream = llmWithTools.streamEvents(trimmedHistory, {
@@ -165,10 +164,10 @@ export class ChatService {
         stream,
         res
       );
-      if (req.sessionId) {
+      if (req.threadId) {
         await this.memoryService.saveMessage({
-          sessionId: req.sessionId,
-          input: req.prompt,
+          sessionId: req.threadId,
+          input: req.input,
           output: content,
         });
       }
@@ -179,15 +178,15 @@ export class ChatService {
     }
   }
 
-  async getMessages(sessionId: any) {
-    return this.memoryService.getMessages(sessionId);
+  async getMessages(threadId: any) {
+    return this.memoryService.getMessages(threadId);
   }
 
   async parseCompletion(req: any) {
     try {
       let messages = [];
-      const prompt = convertToLangChainMessages(req.prompt);
-      messages = [...messages, ...prompt];
+      const input = convertToLangChainMessages(req.input);
+      messages = [...messages, ...input];
       if (req.instructions) {
         const system_message = new SystemMessage(req.instructions);
         messages.push(system_message);
@@ -207,8 +206,8 @@ export class ChatService {
   async parsePresentation(req: any) {
     try {
       let messages: any[] = [];
-      const prompt = convertToLangChainMessages(req.prompt);
-      messages = [...messages, ...prompt];
+      const input = convertToLangChainMessages(req.input);
+      messages = [...messages, ...input];
 
       if (req.instructions) {
         const system_message = new SystemMessage(req.instructions);
