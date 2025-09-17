@@ -68,21 +68,36 @@ export class FileSearchToolService {
       throw new Error("Query is required and must be a non-empty string");
     }
 
-    // Execute the search using RAG service
-    const results = await this.ragService.query({
-      userId,
-      threadId,
-      query: query.trim(),
-      topK: k,
-    });
+    try {
+      console.log(
+        `🔍 FileSearch: Searching for "${query.trim()}" in thread ${
+          threadId || "all"
+        }`
+      );
 
-    // Format results to match expected structure
-    return results.map((r) => ({
-      content: r.content,
-      documentId: r.documentId,
-      index: r.index,
-      similarity: r.similarity,
-    }));
+      // Execute the search using RAG service
+      const results = await this.ragService.query({
+        userId,
+        threadId,
+        query: query.trim(),
+        topK: k,
+      });
+
+      console.log(`✅ FileSearch: Found ${results.length} results`);
+
+      // Format results to match expected structure
+      return results.map((r) => ({
+        content: r.content,
+        documentId: r.documentId,
+        index: r.index,
+        similarity: r.similarity,
+      }));
+    } catch (error) {
+      console.error("FileSearch tool execution error:", error);
+
+      // Return empty results instead of throwing to prevent chat failure
+      return [];
+    }
   }
 
   /**

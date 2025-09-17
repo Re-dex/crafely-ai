@@ -29,20 +29,36 @@ export class PrismaVectorStore {
     query: number[],
     k: number = this.topK
   ): Promise<[Document, number][]> {
-    // Get document chunks from Prisma
-    let candidates: any[] = [];
+    try {
+      // Get document chunks from Prisma
+      let candidates: any[] = [];
 
-    if (this.threadId) {
-      // Query within specific thread
-      const threadDocs = await prisma.document.findMany({
-        where: { userId: this.userId, threadId: this.threadId },
-        select: { id: true },
-      });
-      const threadDocIds = threadDocs.map((d) => d.id);
+      if (this.threadId) {
+        // Query within specific thread
+        const threadDocs = await prisma.document.findMany({
+          where: { userId: this.userId, threadId: this.threadId },
+          select: { id: true },
+        });
+        const threadDocIds = threadDocs.map((d) => d.id);
 
-      if (threadDocIds.length > 0) {
+        if (threadDocIds.length > 0) {
+          candidates = await prisma.documentChunk.findMany({
+            where: { userId: this.userId, documentId: { in: threadDocIds } },
+            select: {
+              id: true,
+              documentId: true,
+              index: true,
+              content: true,
+              embedding: true,
+            },
+            take: Math.max(k * 20, 100),
+            orderBy: { createdAt: "desc" },
+          });
+        }
+      } else {
+        // Query all user documents
         candidates = await prisma.documentChunk.findMany({
-          where: { userId: this.userId, documentId: { in: threadDocIds } },
+          where: { userId: this.userId },
           select: {
             id: true,
             documentId: true,
@@ -54,72 +70,62 @@ export class PrismaVectorStore {
           orderBy: { createdAt: "desc" },
         });
       }
-    } else {
-      // Query all user documents
-      candidates = await prisma.documentChunk.findMany({
-        where: { userId: this.userId },
-        select: {
-          id: true,
-          documentId: true,
-          index: true,
-          content: true,
-          embedding: true,
-        },
-        take: Math.max(k * 20, 100),
-        orderBy: { createdAt: "desc" },
-      });
-    }
 
-    if (candidates.length === 0) {
+      if (candidates.length === 0) {
+        return [];
+      }
+
+      // Calculate cosine similarity
+      const similarity = (a: number[], b: number[]) => {
+        let dot = 0;
+        let aNorm = 0;
+        let bNorm = 0;
+        const len = Math.min(a.length, b.length);
+        for (let i = 0; i < len; i++) {
+          const av = a[i];
+          const bv = b[i];
+          dot += av * bv;
+          aNorm += av * av;
+          bNorm += bv * bv;
+        }
+        if (aNorm === 0 || bNorm === 0) return 0;
+        return dot / (Math.sqrt(aNorm) * Math.sqrt(bNorm));
+      };
+
+      // Calculate similarities and sort
+      const scored = candidates.map((candidate) => ({
+        ...candidate,
+        similarity: similarity(
+          query,
+          (candidate.embedding as unknown as number[]) || []
+        ),
+      }));
+
+      scored.sort((a, b) => b.similarity - a.similarity);
+
+      // Convert to LangChain Document format
+      const results: [Document, number][] = scored
+        .slice(0, k)
+        .map((candidate) => [
+          new Document({
+            pageContent: candidate.content,
+            metadata: {
+              id: candidate.id,
+              documentId: candidate.documentId,
+              index: candidate.index,
+              userId: this.userId,
+              threadId: this.threadId,
+            },
+          }),
+          candidate.similarity,
+        ]);
+
+      return results;
+    } catch (error) {
+      console.error("PrismaVectorStore database error:", error);
+      // Return empty results on database error
       return [];
     }
-
-    // Calculate cosine similarity
-    const similarity = (a: number[], b: number[]) => {
-      let dot = 0;
-      let aNorm = 0;
-      let bNorm = 0;
-      const len = Math.min(a.length, b.length);
-      for (let i = 0; i < len; i++) {
-        const av = a[i];
-        const bv = b[i];
-        dot += av * bv;
-        aNorm += av * av;
-        bNorm += bv * bv;
-      }
-      if (aNorm === 0 || bNorm === 0) return 0;
-      return dot / (Math.sqrt(aNorm) * Math.sqrt(bNorm));
-    };
-
-    // Calculate similarities and sort
-    const scored = candidates.map((candidate) => ({
-      ...candidate,
-      similarity: similarity(
-        query,
-        (candidate.embedding as unknown as number[]) || []
-      ),
-    }));
-
-    scored.sort((a, b) => b.similarity - a.similarity);
-
-    // Convert to LangChain Document format
-    const results: [Document, number][] = scored
-      .slice(0, k)
-      .map((candidate) => [
-        new Document({
-          pageContent: candidate.content,
-          metadata: {
-            id: candidate.id,
-            documentId: candidate.documentId,
-            index: candidate.index,
-            userId: this.userId,
-            threadId: this.threadId,
-          },
-        }),
-        candidate.similarity,
-      ]);
-
-    return results;
   }
 
   /**

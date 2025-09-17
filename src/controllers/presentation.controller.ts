@@ -91,7 +91,12 @@ export class PresentationController extends BaseController {
   async chat(req: any, res: Response<any>) {
     this.handleRequest(req, res, async () => {
       try {
-        const response = await this.chatService.streamChat(req.body, res);
+        // Pass the full req object to include user information from middleware
+        const chatRequest = {
+          ...req.body,
+          user: req.user, // Include user from JWT/API key middleware
+        };
+        const response = await this.chatService.streamChat(chatRequest, res);
         await this.usageRecorder.recordFromRequest(
           req,
           response.usage_metadata,
