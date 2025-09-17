@@ -1,24 +1,33 @@
 import { body, query, ValidationChain } from "express-validator";
 
 export class ChatValidator {
+  // Reusable input validation for string or array of objects
+  private static readonly inputValidation = body("input")
+    .notEmpty()
+    .withMessage("input is required")
+    .custom((value) => {
+      if (typeof value === "string") return true;
+      if (Array.isArray(value)) return true;
+      throw new Error("input must be a string or an array of objects");
+    });
   static readonly completion: ValidationChain[] = [
-    body("prompt").optional(),
+    this.inputValidation,
     body("instructions").trim().optional(),
-    body("sessionId").trim().optional(),
+    body("threadId").trim().notEmpty().withMessage("threadId is required"),
   ];
   static readonly messages: ValidationChain[] = [
-    query("sessionId").trim().notEmpty().withMessage("sessionId is required"),
+    query("threadId").trim().notEmpty().withMessage("threadId is required"),
   ];
   static readonly parseCompletion: ValidationChain[] = [
-    body("sessionId").trim().notEmpty().withMessage("sessionId is required"),
+    body("threadId").trim().notEmpty().withMessage("threadId is required"),
     body("instructions").trim().optional(),
-    body("prompt").optional(),
+    this.inputValidation,
   ];
   // New validator for presentation parsing
   static readonly parsePresentation: ValidationChain[] = [
-    body("sessionId").trim().optional(),
+    body("threadId").trim().notEmpty().withMessage("threadId is required"),
     body("instructions").trim().optional(),
-    body("prompt").optional(),
+    this.inputValidation,
   ];
   static readonly imageCompletion: ValidationChain[] = [
     body("input").isObject().withMessage("input must be an object"),
