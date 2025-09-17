@@ -24,6 +24,7 @@
     "@clerk/express": "^1.7.3",
     "@langchain/community": "^0.3.46",
     "@langchain/core": "^0.3.59",
+    "@langchain/langgraph": "^0.4.9",
     "@langchain/openai": "^0.5.13",
     "@prisma/client": "^6.10.1",
     "@types/ejs": "^3.1.5",

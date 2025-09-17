@@ -18,7 +18,7 @@ export interface ChatCompletionRequest {
 }
 
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: "system" | "user" | "assistant";
   content: string;
 }
 
@@ -26,4 +26,49 @@ export interface StreamResponse {
   id: string;
   content: string;
   done: boolean;
+}
+
+// RAG Service Types
+export interface CreateDocumentInput {
+  userId: string;
+  threadId?: string;
+  filePath: string;
+  filename?: string;
+  mimeType?: string;
+  title?: string;
+  chunkSize?: number;
+  chunkOverlap?: number;
+}
+
+export interface QueryInput {
+  userId: string;
+  threadId?: string;
+  query: string;
+  topK?: number;
+}
+
+export interface DocumentMetadata {
+  userId: string;
+  threadId?: string;
+  documentId: string;
+  filename?: string;
+  title?: string;
+  mimeType?: string;
+  chunkIndex: number;
+}
+
+export interface RagWorkflowResult {
+  answer: string;
+  confidence: number;
+  documents: any[];
+  metadata: {
+    retrievalTime: number;
+    processingTime: number;
+    totalTime: number;
+  };
+}
+
+export interface DocumentStats {
+  documentCount: number;
+  chunkCount: number;
 }

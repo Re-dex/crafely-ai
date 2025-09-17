@@ -1,71 +1,65 @@
 import { prisma } from "../database/prisma";
 import { OpenAiService } from "./openai.service";
-import pdfParse from "pdf-parse";
+import { Document } from "@langchain/core/documents";
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+import { OpenAIEmbeddings } from "@langchain/openai";
+import { PrismaVectorStore } from "./prisma-vector-store";
+import { VectorStore } from "@langchain/core/vectorstores";
+import { BaseRetriever } from "@langchain/core/retrievers";
+import {
+  CreateDocumentInput,
+  QueryInput,
+  DocumentMetadata,
+  DocumentStats,
+} from "../types";
 import fs from "fs";
 
-type CreateDocumentInput = {
-  userId: string;
-  threadId?: string;
-  filePath: string;
-  filename?: string;
-  mimeType?: string;
-  title?: string;
-  chunkSize?: number;
-  chunkOverlap?: number;
-};
-
-type QueryInput = {
-  userId: string;
-  threadId?: string;
-  query: string;
-  topK?: number;
-};
-
 export class RagService {
-  private openai: OpenAiService;
+  private embeddings: OpenAIEmbeddings;
+  private textSplitter: RecursiveCharacterTextSplitter;
 
   constructor(openaiService = new OpenAiService()) {
-    this.openai = openaiService;
-  }
-
-  private chunkText(text: string, size: number, overlap: number) {
-    const chunks: { content: string; index: number }[] = [];
-    const words = text.split(/\s+/);
-    let start = 0;
-    let index = 0;
-    while (start < words.length) {
-      const end = Math.min(start + size, words.length);
-      const content = words.slice(start, end).join(" ");
-      chunks.push({ content, index });
-      index += 1;
-      if (end === words.length) break;
-      start = end - overlap;
-      if (start < 0) start = 0;
-    }
-    return chunks;
-  }
-
-  private async embedTexts(texts: string[]): Promise<number[][]> {
-    const sdk: any = (this.openai as any).sdk;
-    const response = await sdk.embeddings.create({
-      model: "text-embedding-3-small",
-      input: texts,
+    // Initialize OpenAI embeddings using the existing service
+    this.embeddings = new OpenAIEmbeddings({
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      modelName: "text-embedding-3-small",
     });
-    return response.data.map((d: any) => d.embedding as number[]);
+
+    // Initialize text splitter with default settings
+    this.textSplitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 1000,
+      chunkOverlap: 200,
+      separators: ["\n\n", "\n", " ", ""],
+    });
   }
 
+  /**
+   * Create a document using LangChain document loaders and text splitters
+   */
   async createDocument(input: CreateDocumentInput) {
     const { userId, threadId, filePath, filename, mimeType, title } = input;
-    const chunkSize = input.chunkSize ?? 300;
-    const chunkOverlap = input.chunkOverlap ?? 50;
+    const chunkSize = input.chunkSize ?? 1000;
+    const chunkOverlap = input.chunkOverlap ?? 200;
 
+    // Update text splitter with custom settings if provided
+    if (input.chunkSize || input.chunkOverlap) {
+      this.textSplitter = new RecursiveCharacterTextSplitter({
+        chunkSize,
+        chunkOverlap,
+        separators: ["\n\n", "\n", " ", ""],
+      });
+    }
+
+    // Load document using LangChain PDF loader
+    const loader = new PDFLoader(filePath);
+    const documents = await loader.load();
+
+    // Split documents into chunks
+    const splitDocs = await this.textSplitter.splitDocuments(documents);
+
+    // Create document record in database
     const buffer = fs.readFileSync(filePath);
-    const parsed = await pdfParse(buffer);
-    const text = parsed.text || "";
-
-    const chunks = this.chunkText(text, chunkSize, chunkOverlap);
-    const embeddings = await this.embedTexts(chunks.map((c) => c.content));
-
     const document = await prisma.document.create({
       data: {
         userId,
@@ -77,14 +71,41 @@ export class RagService {
       },
     });
 
+    // Prepare documents with metadata for vector store
+    const documentsWithMetadata = splitDocs.map((doc, index) => {
+      const metadata: DocumentMetadata = {
+        userId,
+        threadId,
+        documentId: document.id,
+        filename,
+        title: title ?? filename ?? "Untitled",
+        mimeType: mimeType ?? "application/pdf",
+        chunkIndex: index,
+      };
+
+      return new Document({
+        pageContent: doc.pageContent,
+        metadata: {
+          ...doc.metadata,
+          ...metadata,
+        },
+      });
+    });
+
+    // Generate embeddings and store in database
+    const embeddings = await this.embeddings.embedDocuments(
+      documentsWithMetadata.map((doc) => doc.pageContent)
+    );
+
+    // Store chunks in database
     await prisma.$transaction(
-      chunks.map((chunk, i) =>
+      documentsWithMetadata.map((doc, i) =>
         prisma.documentChunk.create({
           data: {
             documentId: document.id,
             userId,
-            index: chunk.index,
-            content: chunk.content,
+            index: i,
+            content: doc.pageContent,
             embedding: embeddings[i] as unknown as any,
           },
         })
@@ -94,84 +115,68 @@ export class RagService {
     return document;
   }
 
-  private async embedQuery(query: string): Promise<number[]> {
-    const sdk: any = (this.openai as any).sdk;
-    const response = await sdk.embeddings.create({
-      model: "text-embedding-3-small",
-      input: [query],
-    });
-    return response.data[0].embedding as number[];
-  }
-
+  /**
+   * Query documents using Prisma-based vector store
+   */
   async query(input: QueryInput) {
     const { userId, threadId, query, topK = 5 } = input;
-    const queryEmbedding = await this.embedQuery(query);
 
-    let candidates: any[] = [];
-    if (threadId) {
-      const threadDocs = await prisma.document.findMany({
-        where: { userId, threadId },
-        select: { id: true },
-      });
-      const threadDocIds = threadDocs.map((d) => d.id);
-      if (threadDocIds.length > 0) {
-        candidates = await prisma.documentChunk.findMany({
-          where: { userId, documentId: { in: threadDocIds } },
-          select: {
-            id: true,
-            documentId: true,
-            index: true,
-            content: true,
-            embedding: true,
-          },
-          take: Math.max(topK * 20, 100),
-          orderBy: { createdAt: "desc" },
-        });
-      }
-    }
+    // Create PrismaVectorStore for direct database queries
+    const vectorStore = new PrismaVectorStore(this.embeddings, {
+      userId,
+      threadId,
+      topK,
+    });
 
-    if (candidates.length < topK) {
-      const userScope = await prisma.documentChunk.findMany({
-        where: { userId },
-        select: {
-          id: true,
-          documentId: true,
-          index: true,
-          content: true,
-          embedding: true,
-        },
-        take: Math.max(topK * 20, 100),
-        orderBy: { createdAt: "desc" },
-      });
-      const seen = new Set(candidates.map((c) => c.id));
-      for (const c of userScope) if (!seen.has(c.id)) candidates.push(c);
-    }
+    // Perform similarity search directly against Prisma database
+    const results = await vectorStore.similaritySearchWithScore(query, topK);
 
-    const similarity = (a: number[], b: number[]) => {
-      let dot = 0;
-      let aNorm = 0;
-      let bNorm = 0;
-      const len = Math.min(a.length, b.length);
-      for (let i = 0; i < len; i++) {
-        const av = a[i];
-        const bv = b[i];
-        dot += av * bv;
-        aNorm += av * av;
-        bNorm += bv * bv;
-      }
-      if (aNorm === 0 || bNorm === 0) return 0;
-      return dot / (Math.sqrt(aNorm) * Math.sqrt(bNorm));
-    };
-
-    const scored = candidates.map((c) => ({
-      ...c,
-      similarity: similarity(
-        queryEmbedding,
-        (c.embedding as unknown as number[]) || []
-      ),
+    // Format results to match original structure
+    return results.map(([doc, score]) => ({
+      id: doc.metadata.id,
+      documentId: doc.metadata.documentId,
+      index: doc.metadata.index,
+      content: doc.pageContent,
+      similarity: score,
+      embedding: null, // Not needed in response, already used for search
     }));
+  }
 
-    scored.sort((a, b) => b.similarity - a.similarity);
-    return scored.slice(0, topK);
+  /**
+   * Create a retriever for a specific user and optional thread
+   */
+  async createRetriever(
+    userId: string,
+    threadId?: string,
+    topK: number = 5
+  ): Promise<BaseRetriever> {
+    // Create PrismaVectorStore for direct database queries
+    const vectorStore = new PrismaVectorStore(this.embeddings, {
+      userId,
+      threadId,
+      topK,
+    });
+
+    return vectorStore.asRetriever(topK);
+  }
+
+  /**
+   * Get document statistics for a user
+   */
+  async getDocumentStats(
+    userId: string,
+    threadId?: string
+  ): Promise<DocumentStats> {
+    const whereClause = threadId ? { userId, threadId } : { userId };
+
+    const [documentCount, chunkCount] = await Promise.all([
+      prisma.document.count({ where: whereClause }),
+      prisma.documentChunk.count({ where: whereClause }),
+    ]);
+
+    return {
+      documentCount,
+      chunkCount,
+    };
   }
 }
