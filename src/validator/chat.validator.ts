@@ -23,6 +23,10 @@ export class ChatValidator {
     body("instructions").trim().optional(),
     this.inputValidation,
   ];
+  static readonly slideContent: ValidationChain[] = [
+    body("instructions").trim().optional(),
+    this.inputValidation,
+  ];
   // New validator for presentation parsing
   static readonly parsePresentation: ValidationChain[] = [
     body("threadId").trim().notEmpty().withMessage("threadId is required"),

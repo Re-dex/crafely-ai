@@ -7,8 +7,8 @@ const presentationController = new PresentationController();
 
 // 1. presentation/completion => General completion for presentation context
 router.post(
-  "/completion",
-  ChatValidator.completion,
+  "/slide/content",
+  ChatValidator.slideContent,
   presentationController.completion.bind(presentationController)
 );
 
