@@ -31,7 +31,6 @@ export class FileController extends BaseController {
     try {
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
-        console.log(`✅ Cleaned up temporary file (${context}): ${filePath}`);
       }
     } catch (cleanupError) {
       console.warn(
