@@ -27,7 +27,11 @@ export class PresentationController extends BaseController {
   async completion(req: any, res: Response<any>) {
     this.handleRequest(req, res, async () => {
       try {
-        const response = await this.chatService.streamChat(req.body, res);
+        const chatRequest = {
+          ...req.body,
+          user: req.user, // Include user from JWT/API key middleware
+        };
+        const response = await this.chatService.streamChat(chatRequest, res);
         await this.usageRecorder.recordFromRequest(
           req,
           response.usage_metadata,
@@ -121,7 +125,7 @@ export class PresentationController extends BaseController {
   async getMessages(req: Request, res: Response<any>) {
     this.handleRequest(req, res, async () => {
       const { query } = req;
-      const response = await this.chatService.getMessages(query.sessionId);
+      const response = await this.chatService.getMessages(query.threadId);
       return this.handleResponse(
         "Presentation messages fetched successfully",
         response
